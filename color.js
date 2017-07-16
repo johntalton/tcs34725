@@ -2,7 +2,7 @@
 
 var readline = require('readline');
 
-const Tcs34725 = require('./tcs34725.js');
+const Tcs34725 = require('./tcs34725.js'); 
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -19,7 +19,7 @@ function prompt() {
 function _commandHandler(tcs, cmd) {
   if(cmd.toLowerCase() === 'id'){
     tcs.id().then(id => {
-      console.log('Chip ID: ' + id.toString(16) + (id === Tcs34725.TCS34725_I2C_PART_NUMBER ? ' (valid)' : ' (invalid)'));
+      console.log('Chip ID: 0x' + id.toString(16), (id === Tcs34725.CHIP_ID ? 'valid' : 'invalid'));
       prompt();
     })
     .catch(e => {
