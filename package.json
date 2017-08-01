@@ -5,6 +5,7 @@
   "main": "color.js",
   "dependencies": {
     "i2c": "^0.2.3",
+    "i2c-bus": "^1.2.2",
     "rasbus": "file:../rasbus"
   },
   "repository": {

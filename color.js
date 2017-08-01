@@ -3,7 +3,8 @@
 var readline = require('readline');
 
 const rasbus = require('rasbus');
-const Tcs34725 = require('./tcs34725.js'); 
+const i2c = rasbus.i2c;
+const Tcs34725 = require('./tcs34725.js');
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -29,8 +30,56 @@ function _commandHandler(bus, tcs, timer, cmd) {
     });
   }
   else if(cmd.toLowerCase() === 'on') {
-    tcs.powerOn().then(() => {
+    tcs.setProfile({ powerOn: true }).then(() => {
       console.log('on');
+      prompt();
+    });
+  }
+  else if(cmd.toLowerCase() === 'off') {
+    tcs.setProfile({ powerOn: false }).then(() => {
+      console.log('off');
+      prompt();
+    });
+  }
+  else if(cmd.toLowerCase() === 'clear') {
+    tcs.clearInterrupt().then(() => {
+      console.log('cleared');
+      prompt();
+    }).catch(e => {
+      console.log('error', e);
+      prompt();
+    });
+  }
+  else if(cmd.toLowerCase() === 'active') {
+    tcs.setProfile({ powerOn: true, active: true }).then(() => {
+      console.log('enabled');
+      prompt();
+    });
+  }
+  else if(cmd.toLowerCase() === 'inactive') {
+    tcs.setProfile({ powerOn: true, active: false }).then(() => {
+      console.log('disabled');
+      prompt();
+    });
+  }
+  else if(cmd.toLowerCase() === 'wait') {
+    tcs.setProfile({
+      powerOn: true,
+      active: true,
+      integrationTimeMs: 24,
+      wait: true,
+      waitTimeMs: (2 * 1000),
+      multiplyer: 4,
+      filtering: 30,
+      interrupts: true
+    }).then(() => {
+      console.log('wait');
+      prompt();
+    });
+  }
+  else if(cmd.toLowerCase() === 'nowait') {
+    tcs.setProfile({ powerOn: true, active: true, wait: false }).then(() => {
+      console.log('nowait');
       prompt();
     });
   }
@@ -69,7 +118,7 @@ function startAutoLogout() {
   return timer;
 }
 
-rasbus.i2cbus.init(1, 0x29).then(bus => {
+i2c.init(1, 0x29).then(bus => {
   Tcs34725.init(bus).then(tcs => {
     const timer = startAutoLogout();
     commandHandler = (cmd) => _commandHandler(bus, tcs, timer, cmd);
