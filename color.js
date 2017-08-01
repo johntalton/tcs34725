@@ -4,7 +4,7 @@ var readline = require('readline');
 
 const rasbus = require('rasbus');
 const i2c = rasbus.i2c;
-const Tcs34725 = require('./tcs34725.js');
+const Tcs34725 = require('./src/tcs34725.js');
 
 const rl = readline.createInterface({
   input: process.stdin,

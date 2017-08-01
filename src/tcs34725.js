@@ -1,6 +1,6 @@
 
+  const TCS34725_I2C_ADDRESS = 0x29;
 
-  const TCS34725_I2C_ADDRESS = 0x29; // TCS34725
   const TCS34725_I2C_PART_NUMBER = 0x44 // TCS34721 and TCS34725
   // const TCS_I2C_PART_NUMBER = 0x4D // TCS34723 and TCS34727
 
@@ -31,6 +31,7 @@
   const BDATAL_REGISTER  = 0x1A;
   const BDATAH_REGISTER  = 0x1B;
 
+  const DATA_BLOCK_START_REGISTER = 0x14;
   const THRESHOLD_BLOCK_START_REGISTER = 0x04;
   const PROFILE_BLOCK_START_REGISTER = 0x00;
 
@@ -97,7 +98,7 @@ class Tcs34725 {
     if(profile.filtering === undefined) { profile.filtering = false; }
     if(profile.multiplyer === undefined) { profile.multiplyer = 1; }
 
-    console.log('set profile', profile);
+    // console.log('set profile', profile);
 
     const enable = Converter.toEnable({
       AIEN: profile.interrupts,
@@ -116,6 +117,8 @@ class Tcs34725 {
   }
 
   clearInterrupt() { return Common.clearInterrupt(this.bus); }
+
+  data() { return Common._dataBulk(this.bus); }
 }
 
 
@@ -273,6 +276,17 @@ class Common {
   static clearInterrupt(bus) {
     const cmd = (CMD_TYPE_SPECIAL << 5) | (CMD_SPECIAL_CLEAR);
     return bus.write(cmd | TCS34725_COMMAND_BIT);
+  }
+
+  static _dataBulk(bus) {
+    return bus.readBytes(DATA_BLOCK_START_REGISTER | TCS34725_COMMAND_BIT, 8).then(buffer => {
+      const c = buffer.readUInt16LE(0);
+      const r = buffer.readUInt16LE(2);
+      const g = buffer.readUInt16LE(4);
+      const b = buffer.readUInt16Le(6);
+
+      return { r: r, g: g, b: b, c: c };
+    });
   }
 
 }
@@ -502,3 +516,4 @@ class Converter {
 
 module.exports.init = Tcs34725.init;
 module.exports.CHIP_ID = TCS34725_I2C_PART_NUMBER;
+module.exports.ADDRESS = TCS34725_I2C_ADDRESS;
