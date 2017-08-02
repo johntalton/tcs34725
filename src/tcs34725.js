@@ -118,7 +118,7 @@ class Tcs34725 {
 
   clearInterrupt() { return Common.clearInterrupt(this.bus); }
 
-  data() { return Common._dataBulk(this.bus); }
+  data() { return Common.data(this.bus); }
 }
 
 
@@ -221,7 +221,7 @@ class Common {
 
   static _profileBulk(bus) {
     return bus.read(PROFILE_BLOCK_START_REGISTER | TCS34725_COMMAND_BIT, 20).then(buffer => {
-      console.log(buffer);
+      // console.log(buffer);
 
       const enable = Converter.parseEnable(buffer.readUInt8(0));
       const timing = Converter.parseTiming(buffer.readUInt8(1));
@@ -279,16 +279,22 @@ class Common {
   }
 
   static _dataBulk(bus) {
-    return bus.readBytes(DATA_BLOCK_START_REGISTER | TCS34725_COMMAND_BIT, 8).then(buffer => {
+    return bus.read(DATA_BLOCK_START_REGISTER | TCS34725_COMMAND_BIT, 8).then(buffer => {
+      // console.log('bulk data', buffer);
       const c = buffer.readUInt16LE(0);
       const r = buffer.readUInt16LE(2);
       const g = buffer.readUInt16LE(4);
-      const b = buffer.readUInt16Le(6);
+      const b = buffer.readUInt16LE(6);
+
+      // const c = (buffer.readUInt8(1) << 8) | buffer.readUInt8(0);
 
       return { r: r, g: g, b: b, c: c };
     });
   }
 
+  static data(bus) {
+    return Common._dataBulk(bus).then(Converter.formatData);
+  }
 }
 
 
@@ -297,7 +303,7 @@ class Common {
  */
 class Converter {
   static formatProfile(enable, timing, wtiming, threshold, persistence, config, control, status) {
-    console.log('format profile', config.wlong, status);
+    // console.log('format profile', config.wlong, status);
     return {
       powerOn: enable.PON,
       active: enable.AEN,
@@ -510,6 +516,29 @@ class Converter {
       aint: (value & AINT) === AINT,
       avalid: (value & AVALID) === AVALID
     };
+  }
+
+  static formatData(data) {
+    return {
+      r: data.r,
+      g: data.g,
+      b: data.b,
+      c: data.c,
+      red: data.r / data.c,
+      green: data.g / data.c,
+      blue: data.b / data.c,
+      lux: Converter.calculateLux(data.r, data.g, data.b),
+      tempature: Converter.calculateTempature(data.r, data.g, data.b)
+    };
+  }
+
+
+  static calculateLux(r, g, b) {
+    return (-0.32466 * r) + (1.57837 * g) + (-0.73191 * b);
+  }
+
+  static calculateTempature(r, g, b) {
+    return NaN;
   }
 }
 

@@ -5,7 +5,7 @@ const i2c = rasbus.i2cbus;
 const Tcs34725 = require('./src/tcs34725.js');
 
 function checkId(tcs) {
-  console.log('checkid: ' , tcs);
+  // console.log('checkid: ' , tcs);
   return tcs.id().then(id => {
     console.log('Chip ID: 0x' + id.toString(16));
     if(id !== Tcs34725.CHIP_ID){ throw new Error('invalid/unknonw chip id: ' + id); }
@@ -19,20 +19,20 @@ function setProfile(tcs) {
     active: true,
     integrationTimeMs: 24,
 
-    interrupts: true, // filter:30 @ waitTime:2s -> interupts only once 1min
-    filtering: 30,
+    interrupts: false, // filter:30 @ waitTime:2s -> interupts only once 1min
+    filtering: false, // 30
     high: 0,
     low: 0,
 
-    wait: true,
-    waitTimeMs: (2 * 1000),
+    wait: false,
+    waitTimeMs: 2 * 1000,
 
-    multiplyer: 4 // 1 4 16 60 gain
+    multiplyer: 16 // 1 4 16 60 gain
   }).then(() => tcs); // proxy
 }
 
 function poll(bus, tcs) {
-  console.log(bus, tcs);
+  // console.log(bus, tcs);
   tcs.data().then(data => {
     console.log(data);
   }).catch(e => { console.log('error', e); });
