@@ -6,6 +6,7 @@
   "dependencies": {
     "i2c": "^0.2.3",
     "i2c-bus": "^1.2.2",
+    "onoff": "^1.1.9",
     "rasbus": "file:../rasbus"
   },
   "repository": {

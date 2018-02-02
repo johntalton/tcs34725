@@ -1,7 +1,9 @@
 'use stict';
 
+const Gpio = require('onoff').Gpio;
+
 const rasbus = require('rasbus');
-const i2c = rasbus.i2cbus;
+const i2c = rasbus.i2c;
 const Tcs34725 = require('./src/tcs34725.js');
 
 function checkId(tcs) {
@@ -17,17 +19,17 @@ function setProfile(tcs) {
   return tcs.setProfile({
     powerOn: true,
     active: true,
-    integrationTimeMs: 24,
+    integrationTimeMs: 240,
 
-    interrupts: false, // filter:30 @ waitTime:2s -> interupts only once 1min
-    filtering: false, // 30
-    high: 0,
-    low: 0,
+    interrupts: true, // filter:30 @ waitTime:2s -> interupts only once 1min
+    filtering: true, // 30
+    high: 290,
+    low: 285,
 
-    wait: false,
-    waitTimeMs: 2 * 1000,
+    wait: true,
+    waitTimeMs: 1 * 1000,
 
-    multiplyer: 16 // 1 4 16 60 gain
+    multiplyer: 60 // 1 4 16 60 gain
   }).then(() => tcs); // proxy
 }
 
@@ -37,6 +39,12 @@ function poll(bus, tcs) {
     console.log(data);
   }).catch(e => { console.log('error', e); });
 }
+
+const led = new Gpio(13, 'out');
+const int = new Gpio(26, 'in', 'both');
+int.watch((err, value) => {
+  console.log('watch int: ', err, value);
+});
 
 
 i2c.init(1, Tcs34725.ADDRESS).then(bus => {

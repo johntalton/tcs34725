@@ -108,7 +108,7 @@ class Tcs34725 {
     });
     const timing = Converter.toTimingMs(profile.integrationTimeMs);
     const [wtiming, wlong] = Converter.toWTimingMs(profile.waitTimeMs);
-    const threshold = Converter.toThreshold(0, 0);
+    const threshold = Converter.toThreshold(profile.low, profile.high);
     const persistence = Converter.toPersistence(profile.filtering);
     const config = Converter.toConfiguration(wlong);
     const control = Converter.toControl(profile.multiplyer);
@@ -169,14 +169,25 @@ class Common {
   }
 
   static _threshold(bus) {
-    return bus.read(AILTL_REGISTER | TCS34725_COMMAND_BIT, 4).then(buffer => {
-      // console.log(buffer);
+    return bus.read(THRESHOLD_BLOCK_START_REGISTER | TCS34725_COMMAND_BIT, 4).then(buffer => {
+      console.log(buffer);
       return Converter.parseThreshold(buffer);
     });
   }
 
-  static threshold(bus, threshold) {
+  static thresholdBulk(bus, threshold) {
+    console.log('threshold', threshold);
     return bus.write(THRESHOLD_BLOCK_START_REGISTER | TCS34725_COMMAND_BIT, threshold);
+  }
+
+  static threshold(bus, threshold) {
+    console.log('threshold', threshold);
+    return Promise.all([
+      bus.write(AILTL_REGISTER | TCS34725_COMMAND_BIT, threshold[0]),
+      bus.write(AILTH_REGISTER | TCS34725_COMMAND_BIT, threshold[1]),
+      bus.write(AIHTL_REGISTER | TCS34725_COMMAND_BIT, threshold[2]),
+      bus.write(AIHTH_REGISTER | TCS34725_COMMAND_BIT, threshold[3]),
+    ]);
   }
 
   static _persistence(bus) {
@@ -265,7 +276,7 @@ class Common {
     return Promise.all([
       Common.timing(bus, timing),
       Common.wtiming(bus, wtiming),
-      //Common.threshold(bus, threshold),
+      Common.threshold(bus, threshold),
       Common.persistence(bus, persistence),
       Common.config(bus, config),
       Common.control(bus, control)
@@ -402,7 +413,9 @@ class Converter {
   }
 
   static toThreshold(low, high) {
-    return Buffer.from([high, low]);
+    return [
+      (high & 0xF0) >> 8, high & 0x0F,
+      (low & 0xF0) >> 8, low & 0x0F];
   }
 
   static parseThreshold(buffer) {
@@ -410,7 +423,7 @@ class Converter {
     const low = buffer.readUInt16LE(2);
     return {
       high: high,
-      low: high
+      low: low
     }
   }
 

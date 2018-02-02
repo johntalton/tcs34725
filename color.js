@@ -71,7 +71,9 @@ function _commandHandler(bus, tcs, timer, cmd) {
       waitTimeMs: (2 * 1000),
       multiplyer: 4,
       filtering: 30,
-      interrupts: true
+      interrupts: true,
+      low: 280,
+      high: 290
     }).then(() => {
       console.log('wait');
       prompt();
