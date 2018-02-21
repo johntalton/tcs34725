@@ -28,14 +28,44 @@ function map(r, g, b) {
   return colurs[key];
 }
 
-function configureDevices(devices) {
-  return Promise.all(devices.map(device => Device.setupDeviceWithRetry(device)));
+function configureStore(config) {
+  return Store.make(config).then(() => {
+    Store.on(config, 'up', () => start(config));
+    Store.on(config, 'down', () => stop(config));
+  });
 }
+
+function start(config) {
+  console.log('start all connected devices');
+  config.devices.forEach(d => Device.startDevice(d));
+}
+
+function stop(config) {
+  console.log('stop all connected devices');
+  config.devices.forEach(d => Device.stopDevice(d));
+}
+
+
+function configureDevices(config) {
+  return Promise.all(config.devices.map(device => {
+    return Device.setupDeviceWithRetry(device).then(() => {
+      Device.on(device, 'data', (data, result) => dataHandler(config, device, data, result));
+      if(config.mqtt.client.connected){ return Device.startDevice(device); }
+    });
+  }));
+}
+
+function dataHandler(config, device, data, result) {
+  console.log({ name: device.name, raw: data.raw, lux: data.lux, threshold: result.threshold });
+  Store.insert(config, device, data)
+    .catch(e => { console.log('storage error', device.name, e); })
+}
+
 
 Config.config('./client.json').then(config => {
   return Promise.resolve()
-    .then(() => Store.make(config))
-    .then(() => configureDevices(config.devices))
+    .then(() => configureStore(config))
+    .then(() => configureDevices(config))
 }).catch(e => {
   console.log('error', e);
 });

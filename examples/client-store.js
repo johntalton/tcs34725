@@ -1,29 +1,36 @@
 "use strict";
 
-const mqtt = require('mqtt');
+const EventEmitter = require('events');
 
-const Device = require('./client-device.js');
+const mqtt = require('mqtt');
 
 class Store {
   static make(config) {
-    console.log('Store::make');
     if(config.mqtt.url === undefined) { return Promise.reject(Error('invalid mqtturl')); }
 
     const client = mqtt.connect(config.mqtt.url, { reconnectPeriod: config.mqtt.reconnectMs });
     
-    client.on('connect', () => { console.log('Mqtt Up'); config.devices.forEach(d => Device.startDevice(d)); });
+    client.on('connect', () => { config.mqtt.emitter.emit('up'); });
     client.on('reconnect', () => { });
     client.on('close', () => { });
-    client.on('offline', () => { console.log('Mqtt Down'); config.devices.forEach(d => Device.stopDevice(d)); });
+    client.on('offline', () => { config.mqtt.emitter.emit('down'); });
     client.on('error', (error) => { console.log(error); process.exit(-1); });
 
+    config.mqtt.emitter = new EventEmitter();
     config.mqtt.client = client;
     return Promise.resolve(client);
   }
 
-  static insert(config, results) {
+  static on(config, event, cb) {
+    return config.mqtt.emitter.on(event, cb);
+  }
+
+  static insert(config, device, results) {
     const topic = 'sensor/light';
-    const payload = results;
+    const payload = {
+      device: device.name,
+      results: results
+    };
 
     return new Promise((resolve, reject) => {
       config.mqtt.client.publish(topic, JSON.stringify(payload));

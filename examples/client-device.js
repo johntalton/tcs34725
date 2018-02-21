@@ -1,5 +1,7 @@
 "use strict";
 
+const EventEmitter = require('events');
+
 const Gpio = require('onoff').Gpio;
 
 const rasbus = require('rasbus');
@@ -8,6 +10,10 @@ const i2c = rasbus.i2c;
 const Tcs34725 = require('../src/tcs34725.js');
 
 class Device {
+  static on(config, event, cb) {
+    return config.emitter.on(event, cb);
+  }
+
   static setupDeviceWithRetry(config) {
     return Device.setupDevice(config)
       .then(() => Device.configureDevice(config))
@@ -18,12 +24,12 @@ class Device {
   }
 
   static setupDevice(config) {
-    console.log('setupDevice', config.name);
+    //console.log('setupDevice', config.name);
+    if(config.emitter === undefined) { config.emitter = new EventEmitter(); }
+
     return rasbus.byname(config.bus.driver).init(...config.bus.id).then(bus => {
-      console.log('bus up', config.name);
       config.bus.client = bus;
       return Tcs34725.init(bus).then(tcs => {
-        console.log('validating chip ID');
         return tcs.id()
           .then(id => {
             if(id !== Tcs34725.CHIP_ID){ throw Error('invalid/unknonw chip id: ' + id); }
@@ -40,33 +46,41 @@ class Device {
   }
 
   static configureDevice(config) {
-    console.log('setting profile', config.name);
+    //console.log('setting profile', config.name);
     return config.client.setProfile(config.profile).then(() => {
-      if(config.clearIntOnStart) { console.log('clearing interrupt'); return config.client.clearInterrupt(); }
+      if(config.clearIntOnStart) { console.log('clearing interrupt', config.name); return config.client.clearInterrupt(); }
     });
   }
 
+  static cleanupDevice(config) {
+    
+    Device.stopDevice(config);
+
+    config.bus.client.close();
+    config.bus.client = undefined;
+    config.client = undefined;
+  }
+
   static retrySetup(config) {
-    console.log('retry setup');
+    //console.log('retry setup');
     Device.setupDevice(config)
       .catch(e => {
 
-        config.bus.client.close();
-        config.bus.client = undefined;
-        config.client = undefined;
+        Device.cleanupDevice(config);
+
         console.log('retry setup failed', config.name, e.message);
       });
   }
 
   static startDevice(config) {
-    console.log('start device', config.name);
+    //console.log('start device', config.name);
     if(config.client === undefined) { return; }
     Device.setupPoller(config);
     Device.setupStepper(config);
   }
 
   static stopDevice(config) {
-    console.log('stop device', config.name);
+    //console.log('stop device', config.name);
     if(config.client === undefined) { return; }
     clearInterval(config.poll.timer);
     
@@ -85,15 +99,50 @@ class Device {
     if(config.step === false) { return }
 
     if(config.interrupt.client === undefined) {
-      console.log('interrupt not configured');
+      console.log('interrupt not configured', config.name);
       return;
     }
    
-    config.interrupt.client.watch(Device.watchInt);
+    config.interrupt.client.watch((err, value) => Device.watchInt(config, err, value));
   }
 
-  static watchInt(err, value) {
-    console.log('-----------> watch int: ', err, value);
+  static watchInt(config, err, value) {
+    if(err) {
+      console.log('gpio interrupt error', config.name, err);
+      // todo teardown client or just ignore, or what
+      return;
+    }
+
+    Promise.all([
+      config.client.threshold(),
+      config.client.data()
+    ])
+    .then(([threshold, data]) => {
+      console.log('reconfigure thresholds', config.name, threshold, data.raw.c);
+      
+      let direction = 0;
+      if(data.raw.c > threshold.high) {
+        direction = +1;
+      }
+      else if(data.raw.c < threshold.low) {
+        direction = -1;
+      }
+      else { direction = 0; }
+
+      let first = Promise.resolve();
+      if(direction !== 0) {
+        const range = threshold.high - threshold.low;
+        const step = direction * Math.trunc(range / 2);
+        const low = threshold.low + step;
+        const high = threshold.high + step;
+        first = config.client.setThreshold(low, high);
+      }      
+
+      return first.then(() => config.client.clearInterrupt());
+    })
+    .catch(e => {
+      console.log('error in stepper', config.name, e);
+    });
   }
 
   static poll(config) {
@@ -119,19 +168,17 @@ class Device {
       }
 
       if(result.thresholdViolation !== undefined) {
-        console.log('polled interrupt value', result.thresholdViolation);
+        //console.log('polled interrupt value', config.name, result.thresholdViolation);
         // TODO software-interrupt inmpmentation to wire back to our interrupt.client impl
       }
-
 
       if(config.poll.skipData) { return; }
 
       return config.client.data().then(data => {
-        console.log(config.name, data);
-        return;
+        config.emitter.emit('data', data, result);
       });
     })
-    .catch(e => { console.log('error', e); });
+    .catch(e => { console.log('error', config.name, e); });
   }
 
 

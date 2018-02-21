@@ -13,7 +13,7 @@
 
       "retryIntervalS": 7,
 
-      "poll": {
+      "x-poll": {
         "pollIntervalMs": 1000,
         "flash": true,
         "status": true,
@@ -31,7 +31,7 @@
         "interrupts": true,
         "filtering": 1,
 
-        "high": 1000,
+        "high": 30,
         "low": 10,
 
         "wait": true,

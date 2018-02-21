@@ -6,7 +6,7 @@ class Config {
   static config(path) {
     return new Promise((resolve, reject) => {
       fs.readFile(path, (err, data) => {
-        if(err) { console.log(); resolve(); return; }
+        if(err) { reject(err); return; }
         resolve(JSON.parse(data));
       });
     }).then(Config._normalize);
@@ -22,7 +22,7 @@ class Config {
   }
 
   static _normalizeDevices(rawDevices) {
-    if(rawDevices === undefined) { console.log('no devices specified'); return []; }
+    if(rawDevices === undefined) { return []; }
 
     let d = rawDevices;
     if(!Array.isArray(d)) { d = [devices]; }
@@ -66,7 +66,7 @@ class Config {
   }
 
   static _normalizePoll(rawPoll) {
-    if(rawPoll === undefined) { console.log('poll disabled'); return false; }
+    if(rawPoll === undefined) { return false; }
     
     const S = rawPoll.pollIntervalS ? rawPoll.pollIntervalS : 0;
     const Ms = rawPoll.pollIntervalMs ? rawPoll.pollIntervalMs : 0;
@@ -94,7 +94,7 @@ class Config {
   }
 
   static _normalizeStep(rawStep) {
-    if(rawStep === undefined) { console.log('step disabled'); return false; }
+    if(rawStep === undefined) { return false; }
 
     // TODO
     return rawStep
@@ -103,7 +103,7 @@ class Config {
   static _normalizeProfile(rawProfile) {
 
     let on = false;
-    if(rawProfile.powerOn === undefined) { console.log('poweron assumed false'); }
+    if(rawProfile.powerOn === undefined) {  }
 
     return rawProfile;
 
@@ -121,7 +121,7 @@ class Config {
   }
 
   static _normalizeGpio(rawGpio, which) {
-    if(rawGpio === undefined) { console.log('gpio not configured', which); return undefined; }
+    if(rawGpio === undefined) { return undefined; }
 
     if(rawGpio.gpio === undefined) { throw Error('gpio pin not configured'); }
     const gpio = rawGpio.gpio;

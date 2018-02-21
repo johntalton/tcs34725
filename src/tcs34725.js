@@ -90,6 +90,9 @@ class Tcs34725 {
   profile() { return Common._profile(this.bus); }
   status() { return Common._status(this.bus); }
 
+  threshold() { return Common._threshold(this.bus); }
+  setThreshold(low, high) { return Common.threshold(this.bus, Converter.toThreshold(low, high)); }
+
   setProfile(profile) {
     if(profile.powerOn === undefined) { profile.powerOn = false; }
     if(profile.active === undefined) { profile.active = false; }
@@ -311,8 +314,9 @@ class Converter {
       wait: enable.WEN,
       waitTime: Converter.formatWTiming(wtiming, config.wlong),
       integrationTime: Converter.formatTiming(timing),
-      thresholdHigh: threshold.high,
-      thresholdLow: threshold.low,
+      //thresholdHigh: threshold.high,
+      //thresholdLow: threshold.low,
+      threshold: { low: threshold.low, high: threshold.high },
       filtering: Converter.formatPersistence(persistence),
       gain: Converter.formatControl(control),
 
