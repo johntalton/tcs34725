@@ -1,3 +1,4 @@
+"use strict";
 
   const TCS34725_I2C_ADDRESS = 0x29;
 
@@ -87,6 +88,7 @@ class Tcs34725 {
   id() { return Common._id(this.bus); }
 
   profile() { return Common._profile(this.bus); }
+  status() { return Common._status(this.bus); }
 
   setProfile(profile) {
     if(profile.powerOn === undefined) { profile.powerOn = false; }
@@ -129,14 +131,12 @@ class Common {
   static _id(bus) {
     return bus.read(ID_REGISTER | TCS34725_COMMAND_BIT, 1).then(buffer => {
       const id = buffer.readUInt8(0);
-      //console.log(buffer, id);
       return id;
     });
   }
 
   static _enable(bus) {
     return bus.read(ENABLE_REGISTER | TCS34725_COMMAND_BIT, 1).then(buffer => {
-      // console.log('_enable', buffer);
       return Converter.parseEnable(buffer);
     });
   }
@@ -148,7 +148,6 @@ class Common {
 
   static _timing(bus) {
     return bus.read(ATIME_REGISTER | TCS34725_COMMAND_BIT, 1).then(buffer => {
-      // console.log(buffer);
       return Converter.parseTiming(buffer);
     });
   }
@@ -159,7 +158,6 @@ class Common {
 
   static _wtiming(bus) {
     return bus.read(WTIME_REGISTER | TCS34725_COMMAND_BIT, 1).then(buffer => {
-      // console.log(buffer);
       return Converter.parseWTiming(buffer);
     });
   }
@@ -170,18 +168,15 @@ class Common {
 
   static _threshold(bus) {
     return bus.read(THRESHOLD_BLOCK_START_REGISTER | TCS34725_COMMAND_BIT, 4).then(buffer => {
-      console.log(buffer);
       return Converter.parseThreshold(buffer);
     });
   }
 
   static thresholdBulk(bus, threshold) {
-    console.log('threshold', threshold);
     return bus.write(THRESHOLD_BLOCK_START_REGISTER | TCS34725_COMMAND_BIT, threshold);
   }
 
   static threshold(bus, threshold) {
-    console.log('threshold', threshold);
     return Promise.all([
       bus.write(AILTL_REGISTER | TCS34725_COMMAND_BIT, threshold[0]),
       bus.write(AILTH_REGISTER | TCS34725_COMMAND_BIT, threshold[1]),
@@ -192,7 +187,6 @@ class Common {
 
   static _persistence(bus) {
     return bus.read(PERS_REGISTER | TCS34725_COMMAND_BIT, 1).then(buffer => {
-      // console.log(buffer);
       return Converter.parsePersistence(buffer);
     });
   }
@@ -203,7 +197,6 @@ class Common {
 
   static _config(bus) {
     return bus.read(CONFIG_REGISTER | TCS34725_COMMAND_BIT, 1).then(buffer => {
-      // console.log(buffer);
       return Converter.parseConfiguration(buffer);
     });
   }
@@ -214,7 +207,6 @@ class Common {
 
   static _control(bus) {
     return bus.read(CONTROL_REGISTER | TCS34725_COMMAND_BIT, 1).then(buffer => {
-      // console.log(buffer);
       return Converter.parseControl(buffer);
     });
   }
@@ -225,11 +217,11 @@ class Common {
 
   static _status(bus) {
     return bus.read(STATUS_REGISTER | TCS34725_COMMAND_BIT, 1).then(buffer => {
-      // console.log(buffer);
       return Converter.parseStatus(buffer);
     });
   }
 
+  /*
   static _profileBulk(bus) {
     return bus.read(PROFILE_BLOCK_START_REGISTER | TCS34725_COMMAND_BIT, 20).then(buffer => {
       // console.log(buffer);
@@ -244,11 +236,10 @@ class Common {
       const control = Converter.parseControl(buffer.readUInt8(16))
       const status = Converter.parseStatus(buffer.readUInt8(19));
 
-      // console.log(enable, timing);
-
       return [enable, timing, wtiming, threshold, persistence, config, control, status];
     });
   }
+  */
 
   static _raw_profile(bus) {
     return Promise.all([
@@ -265,7 +256,6 @@ class Common {
 
   static _profile(bus) {
     return Common._raw_profile(bus).then(parts => {
-      // console.log(parts);
       const [enable, timing, wtiming, threshold, persistence, config, control, status] = parts;
       return Converter.formatProfile(enable, timing, wtiming, threshold, persistence, config, control, status);
     });
@@ -286,12 +276,11 @@ class Common {
 
   static clearInterrupt(bus) {
     const cmd = (CMD_TYPE_SPECIAL << 5) | (CMD_SPECIAL_CLEAR);
-    return bus.write(cmd | TCS34725_COMMAND_BIT);
+    return bus.writeSpecial(cmd | TCS34725_COMMAND_BIT);
   }
 
   static _dataBulk(bus) {
     return bus.read(DATA_BLOCK_START_REGISTER | TCS34725_COMMAND_BIT, 8).then(buffer => {
-      // console.log('bulk data', buffer);
       const c = buffer.readUInt16LE(0);
       const r = buffer.readUInt16LE(2);
       const g = buffer.readUInt16LE(4);
@@ -342,7 +331,6 @@ class Converter {
   static parseEnable(buffer) {
     const value = buffer[0];
 
-    // console.log('parse enable', value);
     return {
       AIEN: (value & AIEN) === AIEN,
       WEN: (value & WEN) === WEN,
@@ -379,14 +367,11 @@ class Converter {
     let assumedWlong = false;
     let waitCount = Math.round(ms / 2.4);
 
-    // console.log('toWtime', assumedWlong, waitCount);
-
     if(ms > 256){
       // assume wlong true desired
       assumedWlong = true;
       waitCount = Math.round(ms / (2.4 * 12));
       if(waitCount > 256) { throw new Error('millisecons out of range: ' + ms); }
-      // console.log('toWtime wlong', assumedWlong, waitCount);
     }
     return [Converter.toWTimingCount(waitCount), assumedWlong];
   }
@@ -414,16 +399,17 @@ class Converter {
 
   static toThreshold(low, high) {
     return [
-      (high & 0xF0) >> 8, high & 0x0F,
-      (low & 0xF0) >> 8, low & 0x0F];
+      low & 0xFF, low >> 8 & 0xFF,
+      high & 0xFF, high >> 8 & 0xFF
+   ];
   }
 
   static parseThreshold(buffer) {
-    const high = buffer.readUInt16LE(0);
-    const low = buffer.readUInt16LE(2);
+    const low = buffer.readUInt16LE(0);
+    const high = buffer.readUInt16LE(2);
     return {
-      high: high,
-      low: low
+      low: low,
+      high: high
     }
   }
 
@@ -483,7 +469,9 @@ class Converter {
   }
 
   static toConfiguration(wlong) {
-    return (WLONG);
+    let config = 0;
+    if(wlong) { config &= WLONG; }
+    return config;
   }
 
   static parseConfiguration(buffer) {
@@ -532,26 +520,55 @@ class Converter {
   }
 
   static formatData(data) {
+    const lt = Converter.calculateLuxAndTempature(data);
     return {
-      r: data.r,
-      g: data.g,
-      b: data.b,
-      c: data.c,
-      red: data.r / data.c,
-      green: data.g / data.c,
-      blue: data.b / data.c,
-      lux: Converter.calculateLux(data.r, data.g, data.b),
-      tempature: Converter.calculateTempature(data.r, data.g, data.b)
+      raw: data,
+      ratio: Converter.calculateRatio(data),
+      rgb: Converter.calculateRGB(data),
+      lux: lt.lux,
+      tempature: lt.tempatureK
     };
   }
 
-
-  static calculateLux(r, g, b) {
-    return (-0.32466 * r) + (1.57837 * g) + (-0.73191 * b);
+  static calculateRatio(raw) {
+    return {
+      r: raw.r / 0xFFFF,
+      g: raw.g / 0xFFFF,
+      b: raw.b / 0xFFFF,
+      c: raw.c / 0XFFFF
+    }
   }
 
-  static calculateTempature(r, g, b) {
-    return NaN;
+  static calculateRGB(raw) {
+    const red = raw.r / raw.c;
+    const green = raw.g / raw.c;
+    const blue = raw.b / raw.c;
+
+    const r = Math.trunc(Math.pow(Math.trunc(red * 256) / 255, 2.5) * 255);
+    const g = Math.trunc(Math.pow(Math.trunc(green * 256) / 255, 2.5) * 255);
+    const b = Math.trunc(Math.pow(Math.trunc(blue * 256) / 255, 2.5) * 255);
+
+    return { r: r, g: g, b: b };
+  }
+
+  static calculateLuxAndTempature(raw) {
+    const r = raw.r;
+    const g = raw.g;
+    const b = raw.b;
+
+    // taken from adafruit version, not sure source or assumptions
+
+    const x = -0.14282 * r + 1.54924 * g + -0.95641 * b;
+    const y = -0.32466 * r + 1.57837 * g + -0.73191 * b;
+    const z = -0.68202 * r + 0.77073 * g +  0.56332 * b;
+
+    const xc = x / (x + y + z);
+    const yc = y / (x + y + z);
+
+    const n = (xc - 0.3320) / (0.1858 - yc);
+    const cct = (449.0 * Math.pow(n, 3)) + (3525.0 * Math.pow(n, 2)) + (6823.3 * n) + 5520.33;
+
+    return { lux: y, tempatureK: cct }
   }
 }
 

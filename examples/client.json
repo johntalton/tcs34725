@@ -1,0 +1,47 @@
+{
+  "mqtt": { "reconnectS": 5 },
+  "devices": [
+    {
+      "bus": { "driver": "i2cbus", "id": [1, 42] },
+      "retryIntervalS": 23,
+
+      "profile": {}
+    },
+    {
+      "name": "Indoor Main Room",
+      "bus": { "driver": "i2cbus", "id": [1, 41] },
+
+      "retryIntervalS": 7,
+
+      "poll": {
+        "pollIntervalMs": 1000,
+        "flash": true,
+        "status": true,
+        "profile": true
+      },
+      "step": { "range": 100 },
+
+      "clearIntOnStart": true,
+
+      "profile": {
+        "powerOn": true,
+        "active": true,
+        "integrationTimeMs": 500,
+
+        "interrupts": true,
+        "filtering": 1,
+
+        "high": 1000,
+        "low": 10,
+
+        "wait": true,
+        "waitTimeS": 7,
+
+        "multiplyer": 1
+      },
+
+      "led": { "gpio": 13 },
+      "interrupt": { "gpio": 4 }
+    }
+  ]
+}
