@@ -133,17 +133,19 @@ class Device {
       //console.log('reconfigure thresholds', config.name, data.raw.c, threshold, direction);
 
       let first = Promise.resolve();
+      let newt = threshold;
       if(direction !== 0) {
         const range = threshold.high - threshold.low;
         const step = direction * Math.trunc(range / 2);
         const low = threshold.low + step;
         const high = threshold.high + step;
+        newt = { low: low, high: high };
         first = config.client.setThreshold(low, high);
       }
       else { console.log('direction Zero, odd as this is interrupt driven, quick mover?'); }
 
       return first.then(() => {
-        config.emitter.emit('step', threshold, direction);
+        config.emitter.emit('step', newt, direction);
         return config.client.clearInterrupt();
       });
     })

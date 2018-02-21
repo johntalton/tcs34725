@@ -2,8 +2,8 @@
   "mqtt": { "reconnectS": 5 },
   "devices": [
     {
-      "bus": { "driver": "i2cbus", "id": [1, 42] },
-      "retryIntervalS": 23,
+      "bus": { "driver": "i2cbus", "id": [1, 666] },
+      "retryIntervalS": 30,
 
       "profile": {}
     },
@@ -13,8 +13,8 @@
 
       "retryIntervalS": 7,
 
-      "x-poll": {
-        "pollIntervalMs": 1000,
+      "poll": {
+        "pollIntervalS": 60,
         "flash": true,
         "status": true,
         "profile": true
@@ -31,8 +31,8 @@
         "interrupts": true,
         "filtering": 1,
 
-        "high": 30,
-        "low": 10,
+        "high": 20,
+        "low": 0,
 
         "wait": true,
         "waitTimeS": 7,
