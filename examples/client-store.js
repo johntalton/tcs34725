@@ -26,14 +26,26 @@ class Store {
   }
 
   static insert(config, device, results) {
-    const topic = 'sensor/light';
+    const topic = 'sensor/light/data';
     const payload = {
       device: device.name,
       results: results
     };
+    return Store._publish(config, topic, payload);
+  }
 
+  static insertStep(config, device, results) {
+    const topic = 'sensor/light/step';
+    const payload = results;
+    return Store._publish(config, topic, payload);
+  }
+
+  static _publish(config, topic, payload) {
     return new Promise((resolve, reject) => {
-      config.mqtt.client.publish(topic, JSON.stringify(payload));
+      config.mqtt.client.publish(topic, JSON.stringify(payload), {}, err => {
+        if(err) { reject(err); }
+        resolve();
+      });
     });
   }
 }

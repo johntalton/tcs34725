@@ -50,6 +50,8 @@ function configureDevices(config) {
   return Promise.all(config.devices.map(device => {
     return Device.setupDeviceWithRetry(device).then(() => {
       Device.on(device, 'data', (data, result) => dataHandler(config, device, data, result));
+      Device.on(device, 'step', (threshold, direction) => stepHandler(config, device, threshold, direction));
+
       if(config.mqtt.client.connected){ return Device.startDevice(device); }
     });
   }));
@@ -61,6 +63,16 @@ function dataHandler(config, device, data, result) {
     .catch(e => { console.log('storage error', device.name, e); })
 }
 
+function stepHandler(config, device, threshold, direction) {
+  console.log({ name: device.name, direction: direction, threshold: threshold });
+  const data = {
+    name: config.name,
+    threshold: threshold,
+    direction: direction
+  };
+  Store.insertStep(config, device, data)
+    .catch(e => { console.log('storage error', device.name, e); })
+}
 
 Config.config('./client.json').then(config => {
   return Promise.resolve()

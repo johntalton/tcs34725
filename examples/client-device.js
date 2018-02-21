@@ -82,10 +82,13 @@ class Device {
   static stopDevice(config) {
     //console.log('stop device', config.name);
     if(config.client === undefined) { return; }
-    clearInterval(config.poll.timer);
-    
+    if(config.poll) {
+      clearInterval(config.poll.timer);
+      config.poll.timer = undefined;
+    }
+
     if(config.interrupt == undefined) { return; }
-    config.interrupt.client.unwatch(Device.watchInt);
+    config.interrupt.client.unwatch();
   }
 
   static setupPoller(config) {
@@ -117,9 +120,7 @@ class Device {
       config.client.threshold(),
       config.client.data()
     ])
-    .then(([threshold, data]) => {
-      console.log('reconfigure thresholds', config.name, threshold, data.raw.c);
-      
+    .then(([threshold, data]) => {      
       let direction = 0;
       if(data.raw.c > threshold.high) {
         direction = +1;
@@ -129,6 +130,8 @@ class Device {
       }
       else { direction = 0; }
 
+      //console.log('reconfigure thresholds', config.name, data.raw.c, threshold, direction);
+
       let first = Promise.resolve();
       if(direction !== 0) {
         const range = threshold.high - threshold.low;
@@ -136,9 +139,13 @@ class Device {
         const low = threshold.low + step;
         const high = threshold.high + step;
         first = config.client.setThreshold(low, high);
-      }      
+      }
+      else { console.log('direction Zero, odd as this is interrupt driven, quick mover?'); }
 
-      return first.then(() => config.client.clearInterrupt());
+      return first.then(() => {
+        config.emitter.emit('step', threshold, direction);
+        return config.client.clearInterrupt();
+      });
     })
     .catch(e => {
       console.log('error in stepper', config.name, e);
