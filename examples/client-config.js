@@ -87,12 +87,23 @@ class Config {
     const profile = rawPoll.profile !== undefined ? rawPoll.profile : true;
     const skipData = rawPoll.skipData !== undefined ? rawPoll.skipData : false;
 
+    const knownM = [1, 4, 16, 60]; // todo move to sensor
+    let cycleM = false;
+    if(rawPoll.cycleMultiplier !== undefined) {
+      if(rawPoll.cycleMultiplier === true) { cycleM = knownM; }
+      //else if(rawPoll.cycleMultiplier === false) { cycleM = false; }
+      else if(!Array.isArray(rawPoll.cycleMultiplier)) {
+        throw Error('cycleMultiplier is not array | boolean');
+      }
+    }
+
     return {
       pollIntervalMs: pollIntervalMs,
       flashMs: flashMs,
       status: status,
       profile: profile,
-      skipData: skipData
+      skipData: skipData,
+      cycleMultiplier: cycleM
     };
   }
 

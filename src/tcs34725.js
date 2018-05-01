@@ -101,7 +101,7 @@ class Tcs34725 {
     if(profile.integrationTimeMs === undefined) { profile.integrationTimeMs = 0; }
     if(profile.waitTimeMs === undefined) { profile.waitTimeMs = 0; }
     if(profile.filtering === undefined) { profile.filtering = false; }
-    if(profile.multiplyer === undefined) { profile.multiplyer = 1; }
+    if(profile.multiplier === undefined) { profile.multiplier = 1; }
 
     // console.log('set profile', profile);
 
@@ -116,7 +116,7 @@ class Tcs34725 {
     const threshold = Converter.toThreshold(profile.low, profile.high);
     const persistence = Converter.toPersistence(profile.filtering);
     const config = Converter.toConfiguration(wlong);
-    const control = Converter.toControl(profile.multiplyer);
+    const control = Converter.toControl(profile.multiplier);
 
     return Common.setProfile(this.bus, enable, timing, wtiming, threshold, persistence, config, control);
   }
@@ -484,15 +484,15 @@ class Converter {
     return { wlong: (value & WLONG) === WLONG };
   }
 
-  static toControl(multiplyer) {
+  static toControl(multiplier) {
     let again;
 
-    switch(multiplyer) {
+    switch(multiplier) {
     case 1: again = GAIN_X1; break;
     case 4: again = GAIN_X4; break;
     case 16: again = GAIN_X16; break;
     case 60: again = GAIN_X60; break;
-    default: throw new Error('unknown multiplyer: ' + multiplyer);
+    default: throw new Error('unknown multiplier: ' + multiplier);
     }
 
     return again;
@@ -505,15 +505,15 @@ class Converter {
   }
 
   static formatControl(control) {
-    let multiplyer;
+    let multiplier;
     switch(control.again) {
-    case GAIN_X1: multiplyer = 1; break;
-    case GAIN_X4: multiplyer = 4; break;
-    case GAIN_X16: multiplyer = 16; break;
-    case GAIN_X60: multiplyer = 60; break;
+    case GAIN_X1: multiplier = 1; break;
+    case GAIN_X4: multiplier = 4; break;
+    case GAIN_X16: multiplier = 16; break;
+    case GAIN_X60: multiplier = 60; break;
     }
 
-    return { again: control.again, multiplyer: multiplyer };
+    return { again: control.again, multiplier: multiplier };
   }
 
   static parseStatus(buffer) {

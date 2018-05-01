@@ -190,6 +190,18 @@ class Device {
   static poll(config) {
     let steps = Promise.resolve({});
 
+    // if cycle multiplier on poll is enabled do that
+    // false | array
+    /*if(config.poll.cycleMultiplyer !== false) {
+      const knownM = [1, 4, 16, 16]; // todo
+      if(config.poll.lastMultiplierIndex === undefined) { config.poll.lastMultiplierIndex = 0; }
+      const newM = knownM[config.poll.lastMultiplierIndex];
+      config.poll.lastMultiplierIndex += 1;
+      if(config.poll.lastMultiplierIndex >= knownM.length) { config.poll.lastMultiplierIndex = 0; }
+      const cycleprofile = { ...config.profile, multiplier: newM };
+      steps = steps.then(result => config.client.setProfile(cycleprofile));
+    }*/
+
     // if status polling enabled do that first (skip if profile as it is included there)
     if(config.poll.status && !config.poll.profile) {
       steps = steps.then(result => config.client.status()

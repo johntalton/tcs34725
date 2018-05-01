@@ -68,7 +68,7 @@ function _commandHandler(bus, tcs, timer, cmd) {
       integrationTimeMs: 24,
       wait: true,
       waitTimeMs: (2 * 1000),
-      multiplyer: 4,
+      multiplier: 4,
       filtering: 30,
       interrupts: true,
       low: 280,

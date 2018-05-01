@@ -17,7 +17,8 @@
         "pollIntervalS": 13,
         "flash": false,
         "status": true,
-        "profile": true
+        "profile": true,
+        "_cycleMultiplyer": [1, 16]
       },
       "step": { "range": 100, "jump": true },
 
@@ -37,7 +38,7 @@
         "wait": true,
         "waitTimeS": 7,
 
-        "multiplyer": 16
+        "multiplier": 16
       },
 
       "led": { "gpio": 13 },
