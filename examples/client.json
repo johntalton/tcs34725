@@ -3,7 +3,7 @@
   "devices": [
     {
       "bus": { "driver": "i2cbus", "id": [1, 666] },
-      "retryIntervalS": 30,
+      "retryIntervalS": 57,
 
       "profile": {}
     },
@@ -11,15 +11,15 @@
       "name": "Indoor Main Room",
       "bus": { "driver": "i2cbus", "id": [1, 41] },
 
-      "retryIntervalS": 7,
+      "retryIntervalS": 13,
 
       "poll": {
-        "pollIntervalS": 60,
-        "flash": true,
+        "pollIntervalS": 13,
+        "flash": false,
         "status": true,
         "profile": true
       },
-      "step": { "range": 100 },
+      "step": { "range": 100, "jump": true },
 
       "clearIntOnStart": true,
 
@@ -31,13 +31,13 @@
         "interrupts": true,
         "filtering": 1,
 
-        "high": 20,
+        "high": 30,
         "low": 0,
 
         "wait": true,
         "waitTimeS": 7,
 
-        "multiplyer": 1
+        "multiplyer": 16
       },
 
       "led": { "gpio": 13 },

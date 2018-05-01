@@ -48,12 +48,15 @@ class Device {
   static configureDevice(config) {
     //console.log('setting profile', config.name);
     return config.client.setProfile(config.profile).then(() => {
-      if(config.clearIntOnStart) { console.log('clearing interrupt', config.name); return config.client.clearInterrupt(); }
+      if(config.clearIntOnStart) {
+        console.log('clearing interrupt on start', config.name);
+        return config.client.clearInterrupt();
+      }
     });
   }
 
   static cleanupDevice(config) {
-    
+    //
     Device.stopDevice(config);
 
     config.bus.client.close();
@@ -87,8 +90,7 @@ class Device {
       config.poll.timer = undefined;
     }
 
-    if(config.interrupt == undefined) { return; }
-    config.interrupt.client.unwatch();
+    Device.disableInterrupt(config);
   }
 
   static setupPoller(config) {
@@ -96,7 +98,7 @@ class Device {
     if(config.poll === false) { return }
     config.poll.timer = setInterval(Device.poll, config.poll.pollIntervalMs, config);
   }
-  
+
   static setupStepper(config) {
     if(config.step === undefined) { return; }
     if(config.step === false) { return }
@@ -105,8 +107,8 @@ class Device {
       console.log('interrupt not configured', config.name);
       return;
     }
-   
-    config.interrupt.client.watch((err, value) => Device.watchInt(config, err, value));
+
+    Device.enableInterrupt(config);
   }
 
   static watchInt(config, err, value) {
@@ -116,11 +118,13 @@ class Device {
       return;
     }
 
+    //console.log('value', value);
+
     Promise.all([
       config.client.threshold(),
       config.client.data()
     ])
-    .then(([threshold, data]) => {      
+    .then(([threshold, data]) => {
       let direction = 0;
       if(data.raw.c > threshold.high) {
         direction = +1;
@@ -135,17 +139,46 @@ class Device {
       let first = Promise.resolve();
       let newt = threshold;
       if(direction !== 0) {
+        // this is the working range, not the configrued range
+        // this allows the system to continue working as expected
+        // even when the profile is being configured externaly.
         const range = threshold.high - threshold.low;
-        const step = direction * Math.trunc(range / 2);
-        const low = threshold.low + step;
-        const high = threshold.high + step;
-        newt = { low: low, high: high };
-        first = config.client.setThreshold(low, high);
+
+        if(config.step.jump) {
+          const step = Math.trunc(range / 2);
+          // todo, this should actaully follow the step sizes
+          // that the existing auto step bellow uses.  this current
+          // impl is more of a 'center' around using existing range
+          // which is a bit odd.  But the goal is to not have to walk
+          // the entire threshold steps then this is a solution
+          newt = { low: data.raw.c - step, high: data.raw.c + step, touched: true };
+        } else {
+          // standard mode is to walk the theshold steps
+          // in the direction of our target. Can be usefull
+          // for clients that expect all ranges traversed
+          // (some client that have longer running times
+          // - like day cycles - may not have been programed
+          // to expect "jumps" in the ranges and thus this
+          // compensates for that)
+          const step = direction * Math.trunc(range / 2);
+          const low = threshold.low + step;
+          const high = threshold.high + step;
+          newt = { low: low, high: high, touched: true };
+        }
+
+        // should be handled by above algos in smarter way, good safety
+        if(newt.low < 0) { newt.low = 0; }
+        if(newt.high < 0) { newt.low = 0; }
+        if(newt.high > 0xFFFF) { newt.low = 0xFFFF; } // todo max thresh value
+
+        // make fisrt our set call
+        first = config.client.setThreshold(newt.low, newt.high);
       }
       else { console.log('direction Zero, odd as this is interrupt driven, quick mover?'); }
 
+      // after that, we just emit the change and clear
       return first.then(() => {
-        config.emitter.emit('step', newt, direction);
+        config.emitter.emit('step', newt, direction, data.raw.c);
         return config.client.clearInterrupt();
       });
     })
@@ -157,19 +190,23 @@ class Device {
   static poll(config) {
     let steps = Promise.resolve({});
 
+    // if status polling enabled do that first (skip if profile as it is included there)
     if(config.poll.status && !config.poll.profile) {
       steps = steps.then(result => config.client.status()
           .then(s => { result.valid = s.availd; result.thresholdViolation = s.aint; return result; })
           .catch(e => { console.log('statsu poll failed', config.name, e); })
         );
     }
-    if(config.poll.profile) { 
+
+    // if profile polling is enabled, do that now
+    if(config.poll.profile) {
       steps = steps.then(result => config.client.profile()
           .then(p => { result = p; return result; })
           .catch(e => { console.log('profile poll failed', config.name, e); })
         );
     }
 
+    // final step with catch so poll doesn't error
     steps.then(result => {
       if((result.valid !== undefined) && !result.valid) {
         console.log('data integration not completed / not ready', config.name);
@@ -183,9 +220,11 @@ class Device {
 
       if(config.poll.skipData) { return; }
 
-      return config.client.data().then(data => {
-        config.emitter.emit('data', data, result);
-      });
+      return Device.ledOnWithDelay(config)
+        .then(() => config.client.data())
+        .then(data => { config.emitter.emit('data', data, result); })
+        .finally(() => Device.ledOff(config));
+
     })
     .catch(e => { console.log('error', config.name, e); });
   }
@@ -199,8 +238,50 @@ class Device {
     config.led.client = new Gpio(config.led.gpio, 'out');
   }
 
+  static ledOnWithDelay(config) {
+    if(config.poll.flashMs === 0) { return Promise.resolve(); }
+    //console.log('flash for Ms:', config.poll.flashMs);
+
+    // todo suppress interrupt if desired by config during flash
+
+    return new Promise((resolve, reject) => {
+      config.led.client.write(1, err => {
+        if(err) { reject(err); }
+        config.led.flashtimer = setTimeout(() => {
+          resolve();
+        }, config.poll.flashMs);
+      });
+    });
+  }
+
+  static ledOff(config) {
+    if(config.poll.flashMs === 0) { return Promise.resolve(); }
+
+    // todo reenable interrupt if disabled during flash
+
+    return new Promise((resolve, reject) => {
+      config.led.client.write(0, err => {
+        if(err) { reject(err); }
+        resolve();
+      });
+    });
+  }
+
+
   static setupInterrupt(config) {
-    config.interrupt.client = new Gpio(config.interrupt.gpio, 'in', 'both', { activeLow: true });
+    config.interrupt.client = new Gpio(config.interrupt.gpio, 'in', 'rising', { activeLow: true });
+  }
+
+  static enableInterrupt(config) {
+    // cache so we can remove specific watch
+    config.interrupt.wcb = (err, value) => Device.watchInt(config, err, value);
+    config.interrupt.client.watch(config.interrupt.wcb);
+  }
+
+  static disableInterrupt(config) {
+    if(config.interrupt == undefined) { return; }
+    config.interrupt.client.unwatch(config.interrupt.wcb);
+    delete config.interrupt.wcb;
   }
 }
 

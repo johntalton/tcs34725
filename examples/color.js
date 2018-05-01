@@ -3,7 +3,6 @@
 var readline = require('readline');
 
 const rasbus = require('rasbus');
-const i2c = rasbus.i2c;
 const Tcs34725 = require('../src/tcs34725.js');
 
 const rl = readline.createInterface({
@@ -120,7 +119,7 @@ function startAutoLogout() {
   return timer;
 }
 
-i2c.init(1, 0x29).then(bus => {
+rasbus.byname('i2c-bus').init(1, 0x29).then(bus => {
   Tcs34725.init(bus).then(tcs => {
     const timer = startAutoLogout();
     commandHandler = (cmd) => _commandHandler(bus, tcs, timer, cmd);

@@ -4,10 +4,7 @@
   "description": "",
   "main": "color.js",
   "dependencies": {
-    "i2c": "^0.2.3",
-    "i2c-bus": "^1.2.2",
-    "mqtt": "^2.15.3",
-    "onoff": "^1.1.9",
+    "onoff": "^3.0.2",
     "rasbus": "file:../rasbus"
   },
   "repository": {
@@ -15,5 +12,9 @@
     "url": "git+https://github.com/johntalton/tcs34725.git"
   },
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "color-convert": "^1.9.1",
+    "mqtt": "^2.17.0"
+  }
 }

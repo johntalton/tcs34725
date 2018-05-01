@@ -278,6 +278,7 @@ class Common {
   }
 
   static clearInterrupt(bus) {
+    //console.log('clearning interupt');
     const cmd = (CMD_TYPE_SPECIAL << 5) | (CMD_SPECIAL_CLEAR);
     return bus.writeSpecial(cmd | TCS34725_COMMAND_BIT);
   }
@@ -544,6 +545,8 @@ class Converter {
   }
 
   static calculateRGB(raw) {
+    if(raw.c <= 0) { return { r: 0, g: 0, b: 0, zero: true }; }
+
     const red = raw.r / raw.c;
     const green = raw.g / raw.c;
     const blue = raw.b / raw.c;

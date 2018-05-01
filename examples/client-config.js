@@ -42,7 +42,7 @@ class Config {
 
         poll: Config._normalizePoll(rawDevice.poll),
         step: Config._normalizeStep(rawDevice.step),
-        
+
         clearIntOnStart: (rawDevice.clreaIntOnStart !== undefined) ? rawDrvice.clearIntOnStart : true,
 
         profile: Config._normalizeProfile(rawDevice.profile),
@@ -67,16 +67,19 @@ class Config {
 
   static _normalizePoll(rawPoll) {
     if(rawPoll === undefined) { return false; }
-    
+
     const S = rawPoll.pollIntervalS ? rawPoll.pollIntervalS : 0;
     const Ms = rawPoll.pollIntervalMs ? rawPoll.pollIntervalMs : 0;
     const pollIntervalMs = S * 1000 + Ms;
 
+    const flashTime = (rawPoll.flashMs !== undefined || rawPoll.flashS !== undefined);
+    const flash = (rawPoll.flash !== undefined) ? rawPoll.flash : true;
     const defaultFlashMs = 2000;
-    let flashMs = (rawPoll.flash !== undefined && rawPoll.flash) ? defaultFlashMs : 0;
-    if(rawPoll.flashMs !== undefined || rawPoll.flashS !== undefined) {
-      const S = rawPoll.flashS ? rawPoll.flashS : 0;
-      const Ms = rawPoll.flashMs ? rawPoll.flashMs : 0;
+    let flashMs = flash ? defaultFlashMs : 0;
+    if(flash && flashTime) {
+      const S = rawPoll.flashS ? parseInt(rawPoll.flashS, 10) : 0;
+      const Ms = rawPoll.flashMs ? parseInt(rawPoll.flashMs, 10) : 0;
+      if(Number.isNaN(S) || Number.isNaN(Ms)) { throw Error('flash time NaN'); }
       flashMs = S * 1000 + Ms;
     }
 
@@ -86,11 +89,11 @@ class Config {
 
     return {
       pollIntervalMs: pollIntervalMs,
-      falshMs: flashMs,
+      flashMs: flashMs,
       status: status,
       profile: profile,
       skipData: skipData
-    }    
+    };
   }
 
   static _normalizeStep(rawStep) {
@@ -136,7 +139,7 @@ class Config {
     if(rawMqtt !== undefined && rawMqtt.url === undefined) {
       url = rawMqtt.url;
     }
-    
+
     let reconnectMs = 10 * 1000;
     if(rawMqtt !== undefined) {
       const S = rawMqtt.reconnectS ? rawMqtt.reconnectS : 0;
