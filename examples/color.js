@@ -1,6 +1,6 @@
 'use stict';
 
-var readline = require('readline');
+const readline = require('readline');
 
 const rasbus = require('rasbus');
 const Tcs34725 = require('../src/tcs34725.js');

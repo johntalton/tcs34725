@@ -28,13 +28,14 @@ function dataHandler(config, device, data, result) {
   const resetColor = '\x1b[0m';
   console.log('\t"' + device.name + '"', data.raw.c, 'rgb:', bgColor + JSON.stringify(data.rgb) + resetColor, 'lux:', Math.trunc(data.lux, 2));
   // console.log(data);
+  console.log(result);
 
   Store.insert(config, device, data)
     .catch(e => { console.log('storage error', device.name, e); })
 }
 
 function stepHandler(config, device, threshold, direction, rawC) {
-  console.log('\t"' + device.name + '"', rawC, (direction > 0) ? '\u21E7' : '\u21E9', 'to', threshold.low, '-', threshold.high);
+  console.log('\t"' + device.name + '"', rawC, direction > 0 ? '\u21E7' : '\u21E9', 'to', threshold.low, '-', threshold.high);
 
   const data = {
     name: config.name,

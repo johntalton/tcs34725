@@ -32,7 +32,7 @@ const BDATAH_REGISTER  = 0x1B;
 
 const DATA_BLOCK_START_REGISTER = 0x14;
 const THRESHOLD_BLOCK_START_REGISTER = 0x04;
-const PROFILE_BLOCK_START_REGISTER = 0x00;
+// const PROFILE_BLOCK_START_REGISTER = 0x00;
 
 const PON  = 0x01;
 const AEN  = 0x02;
@@ -103,7 +103,7 @@ class Converter {
   }
 
   static parseEnable(buffer) {
-    const value = buffer[0];
+    const value = buffer.readInt8(0);
 
     return {
       AIEN: (value & AIEN) === AIEN,
@@ -120,13 +120,12 @@ class Converter {
   }
 
   static parseTiming(buffer) {
-    const value = buffer[0];
+    const value = buffer.readInt8(0);
     return { atime: value };
   }
 
   static formatTiming(timing) {
-    const atime = timing.atime;
-    const integCycles = (256 - atime);
+    const integCycles = 256 - timing.atime;
     const maxCount = integCycles * 1024;
     const millisecond = integCycles * 2.4;
     return {
@@ -156,7 +155,7 @@ class Converter {
   }
 
   static parseWTiming(buffer) {
-    const value = buffer[0];
+    const value = buffer.readInt8(0);
     return { wtime: value };
   }
 
@@ -244,13 +243,11 @@ class Converter {
   }
 
   static toConfiguration(wlong) {
-    let config = 0;
-    if(wlong) { config &= WLONG; }
-    return config;
+    return wlong ? WLONG : 0;
   }
 
   static parseConfiguration(buffer) {
-    const value = buffer[0];
+    const value = buffer.readInt8(0);
     return { wlong: (value & WLONG) === WLONG };
   }
 
@@ -269,8 +266,8 @@ class Converter {
   }
 
   static parseControl(buffer) {
-    const value = buffer[0];
-    const again = (value & AGAIN);
+    const value = buffer.readInt8(0);
+    const again = value & AGAIN;
     return { again: again };
   }
 
@@ -288,7 +285,7 @@ class Converter {
   }
 
   static parseStatus(buffer) {
-    const value = buffer[0];
+    const value = buffer.readInt8(0);
     return {
       aint: (value & AINT) === AINT,
       avalid: (value & AVALID) === AVALID
@@ -330,15 +327,13 @@ class Converter {
   }
 
   static calculateLuxAndTempature(raw) {
-    const r = raw.r;
-    const g = raw.g;
-    const b = raw.b;
+    const {r, g, b } = raw;
 
     // taken from adafruit version, not sure source or assumptions
 
     const x = -0.14282 * r + 1.54924 * g + -0.95641 * b;
     const y = -0.32466 * r + 1.57837 * g + -0.73191 * b;
-    const z = -0.68202 * r + 0.77073 * g +  0.56332 * b;
+    const z = -0.68202 * r + 0.77073 * g + 0.56332 * b;
 
     const xc = x / (x + y + z);
     const yc = y / (x + y + z);
@@ -502,7 +497,7 @@ class Common {
 
   static clearInterrupt(bus) {
     //console.log('clearning interupt');
-    const cmd = (CMD_TYPE_SPECIAL << 5) | (CMD_SPECIAL_CLEAR);
+    const cmd = (CMD_TYPE_SPECIAL << 5) | CMD_SPECIAL_CLEAR;
     return bus.writeSpecial(cmd | TCS34725_COMMAND_BIT);
   }
 

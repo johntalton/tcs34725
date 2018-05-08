@@ -1,4 +1,3 @@
-"use strict";
 
 const EventEmitter = require('events');
 
@@ -9,12 +8,12 @@ class Store {
     if(config.mqtt.url === undefined) { return Promise.reject(Error('invalid mqtturl')); }
 
     const client = mqtt.connect(config.mqtt.url, { reconnectPeriod: config.mqtt.reconnectMs });
-    
+
     client.on('connect', () => { config.mqtt.emitter.emit('up'); });
-    client.on('reconnect', () => { });
-    client.on('close', () => { });
+    //client.on('reconnect', () => { });
+    //client.on('close', () => { });
     client.on('offline', () => { config.mqtt.emitter.emit('down'); });
-    client.on('error', (error) => { console.log(error); process.exit(-1); });
+    client.on('error', (error) => { console.log(error); throw Error('mqtt error: ' + error.toString()) });
 
     config.mqtt.emitter = new EventEmitter();
     config.mqtt.client = client;

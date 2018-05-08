@@ -47,7 +47,7 @@
     "no-labels": "error",
     "no-lone-blocks": "error",
     "no-loop-func": "error",
-    "no-magic-numbers": ["warn", { "enforceConst": true, "detectObjects": true }],
+    "no-magic-numbers": ["off", { "enforceConst": true, "detectObjects": true }],
     "no-multi-spaces": ["error", { "exceptions": { "VariableDeclarator": true } }],
     "no-multi-str": "error",
     "no-new": "error",

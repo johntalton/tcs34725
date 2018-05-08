@@ -216,7 +216,7 @@ class Device {
 
     // final step with catch so poll doesn't error
     await steps.then(result => {
-      if((result.valid !== undefined) && !result.valid) {
+      if(result.valid !== undefined && !result.valid) {
         console.log('data integration not completed / not ready', config.name);
         return Promise.resolve();
       }

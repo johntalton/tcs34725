@@ -72,7 +72,7 @@ class Config {
         poll: Config._normalizePoll(rawDevice.poll),
         step: Config._normalizeStep(rawDevice.step),
 
-        clearIntOnStart: (rawDevice.clreaIntOnStart !== undefined) ? rawDevice.clearIntOnStart : true,
+        clearIntOnStart: rawDevice.clreaIntOnStart !== undefined ? rawDevice.clearIntOnStart : true,
 
         profile: Config._normalizeProfile(rawDevice.profile),
 
@@ -157,7 +157,7 @@ class Config {
     if(rawGpio.disabled !== undefined && rawGpio.disabled !== true) {
       console.log('remove disabled attribute if not true');
     }
-    const disabled = (rawGpio.disabled !== undefined) ? rawGpio.disabled : false;
+    const disabled = rawGpio.disabled !== undefined ? rawGpio.disabled : false;
 
     return {
       name: which,
@@ -167,7 +167,7 @@ class Config {
   }
 
   static _normalizeMqtt(rawMqtt) {
-    const envUrl = process.env.mqtturl;
+    const envUrl = process.env.mqtturl; // eslint-disable-line no-process-env
     const defaultReconnectMs = 10 * 1000;
 
     if(rawMqtt === undefined) { return { url: envUrl, reconnectMs: defaultReconnectMs }; }
