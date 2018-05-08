@@ -1,12 +1,11 @@
-"use strict";
 
 const EventEmitter = require('events');
 
-const Gpio = require('onoff').Gpio;
+const { Gpio } = require('onoff');
 
 const rasbus = require('rasbus');
 
-const Tcs34725 = require('../src/tcs34725.js');
+const { Tcs34725 } = require('../src/tcs34725.js');
 
 class Device {
   // @public
@@ -209,8 +208,8 @@ class Device {
 
     // if profile polling is enabled, do that now
     if(config.poll.profile) {
-      steps = steps.then(result => config.client.profile()
-          .then(p => { result = p; return result; })
+      steps = steps.then(() => config.client.profile()
+          .then(p => { return p; })
           .catch(e => { console.log('profile poll failed', config.name, e); return {}; })
         );
     }
@@ -219,7 +218,7 @@ class Device {
     await steps.then(result => {
       if((result.valid !== undefined) && !result.valid) {
         console.log('data integration not completed / not ready', config.name);
-        return;
+        return Promise.resolve();
       }
 
       if(result.thresholdViolation !== undefined) {
@@ -230,7 +229,7 @@ class Device {
         }
       }
 
-      if(config.poll.skipData) { return; }
+      if(config.poll.skipData) { return Promise.resolve(); }
 
       return Device.ledOnWithDelay(config)
         .then(() => config.client.data())

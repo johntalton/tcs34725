@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "color.js",
+  "scripts": {
+    "lint": "./node_modules/.bin/eslint ."
+  },
   "dependencies": {
     "onoff": "^3.0.2",
     "rasbus": "file:../rasbus"
@@ -15,6 +18,7 @@
   "license": "MIT",
   "devDependencies": {
     "color-convert": "^1.9.1",
+    "eslint": "^4.19.1",
     "mqtt": "^2.17.0"
   }
 }

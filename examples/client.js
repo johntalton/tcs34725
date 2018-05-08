@@ -1,4 +1,3 @@
-"use stict";
 
 const Convert = require('color-convert');
 
@@ -6,12 +5,6 @@ const Config = require('./client-config.js');
 const Store = require('./client-store.js');
 const Device = require('./client-device.js');
 
-function configureStore(config) {
-  return Store.make(config).then(() => {
-    Store.on(config, 'up', () => start(config));
-    Store.on(config, 'down', () => stop(config));
-  });
-}
 
 function start(config) {
   console.log('Store Up: start all connected devices');
@@ -23,22 +16,11 @@ function stop(config) {
   config.devices.forEach(d => Device.stopDevice(d));
 }
 
-function configureDevices(config) {
-  return Promise.all(config.devices.map(device => {
-    // if we aren't active, just skip all together
-    if(!device.active) {
-      console.log('Skip inactive device:', device.name);
-      return Promise.resolve();
-    }
-
-    return Device.setupDeviceWithRetry(device).then(() => {
-      Device.on(device, 'data', (data, result) => dataHandler(config, device, data, result));
-      Device.on(device, 'step', (threshold, direction, rawC) => stepHandler(config, device, threshold, direction, rawC));
-
-      // todo startup hack for state, should move to state machine
-      if(config.mqtt.client.connected){ return Device.startDevice(device); }
-    });
-  }));
+function configureStore(config) {
+  return Store.make(config).then(() => {
+    Store.on(config, 'up', () => start(config));
+    Store.on(config, 'down', () => stop(config));
+  });
 }
 
 function dataHandler(config, device, data, result) {
@@ -61,6 +43,25 @@ function stepHandler(config, device, threshold, direction, rawC) {
   };
   Store.insertStep(config, device, data)
     .catch(e => { console.log('storage error', device.name, e); })
+}
+
+function configureDevices(config) {
+  return Promise.all(config.devices.map(device => {
+    // if we aren't active, just skip all together
+    if(!device.active) {
+      console.log('Skip inactive device:', device.name);
+      return Promise.resolve();
+    }
+
+    return Device.setupDeviceWithRetry(device).then(() => {
+      Device.on(device, 'data', (data, result) => dataHandler(config, device, data, result));
+      Device.on(device, 'step', (threshold, direction, rawC) => stepHandler(config, device, threshold, direction, rawC));
+
+      // todo startup hack for state, should move to state machine
+      if(config.mqtt.client.connected){ return Device.startDevice(device); }
+      return Promise.resolve();
+    });
+  }));
 }
 
 Config.config('./client.json').then(config => {

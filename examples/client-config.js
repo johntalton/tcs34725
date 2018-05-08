@@ -1,8 +1,34 @@
-"use strict";
 
 const fs = require('fs');
 
+const BASE_10 = 10;
+
+/**
+ *
+ **/
 class Config {
+  // static _getBool(cfg, name, defaultBool) {}
+
+  static _getMs(cfg, name, defaultMs, altDefaultMs) {
+    if(cfg[name] !== undefined) {
+      return cfg[name] ? defaultMs : altDefaultMs;
+    }
+
+    const s = cfg[name + 'S'];
+    const ms = cfg[name + 'Ms'];
+
+    if(s === undefined && ms === undefined) { return defaultMs; }
+
+    const s_z = s !== undefined ? s : 0;
+    const ms_z = ms !== undefined ? ms : 0;
+
+    const S = parseInt(s_z, 10);
+    const Ms = parseInt(ms_z, 10);
+    if(Number.isNaN(S) || Number.isNaN(Ms)) { throw Error('NaN S or Ms value'); }
+
+    return S * 1000 + Ms;
+  }
+
   static config(path) {
     return new Promise((resolve, reject) => {
       fs.readFile(path, (err, data) => {
@@ -25,7 +51,7 @@ class Config {
     if(rawDevices === undefined) { return []; }
 
     let d = rawDevices;
-    if(!Array.isArray(d)) { d = [devices]; }
+    if(!Array.isArray(d)) { d = [d]; }
 
     return d.map((rawDevice, index) => {
       const name = rawDevice.name ? rawDevice.name : '#' + index;
@@ -46,7 +72,7 @@ class Config {
         poll: Config._normalizePoll(rawDevice.poll),
         step: Config._normalizeStep(rawDevice.step),
 
-        clearIntOnStart: (rawDevice.clreaIntOnStart !== undefined) ? rawDrvice.clearIntOnStart : true,
+        clearIntOnStart: (rawDevice.clreaIntOnStart !== undefined) ? rawDevice.clearIntOnStart : true,
 
         profile: Config._normalizeProfile(rawDevice.profile),
 
@@ -71,20 +97,9 @@ class Config {
   static _normalizePoll(rawPoll) {
     if(rawPoll === undefined) { return false; }
 
-    const S = rawPoll.pollIntervalS ? rawPoll.pollIntervalS : 0;
-    const Ms = rawPoll.pollIntervalMs ? rawPoll.pollIntervalMs : 0;
-    const pollIntervalMs = S * 1000 + Ms;
-
-    const flashTime = (rawPoll.flashMs !== undefined || rawPoll.flashS !== undefined);
-    const flash = (rawPoll.flash !== undefined) ? rawPoll.flash : true;
-    const defaultFlashMs = 2000;
-    let flashMs = flash ? defaultFlashMs : 0;
-    if(flash && flashTime) {
-      const S = rawPoll.flashS ? parseInt(rawPoll.flashS, 10) : 0;
-      const Ms = rawPoll.flashMs ? parseInt(rawPoll.flashMs, 10) : 0;
-      if(Number.isNaN(S) || Number.isNaN(Ms)) { throw Error('flash time NaN'); }
-      flashMs = S * 1000 + Ms;
-    }
+    const pollIntervalMs = Config._getMs(rawPoll, 'pollInterval', 0);
+    const flashMs = Config._getMs(rawPoll, 'flash', 2 * 1000, 0);
+    //const hasFlashTime = (rawPoll.flashMs !== undefined || rawPoll.flashS !== undefined);
 
     const status = rawPoll.status !== undefined ? rawPoll.status : true;
     const profile = rawPoll.profile !== undefined ? rawPoll.profile : true;
@@ -119,8 +134,7 @@ class Config {
 
   static _normalizeProfile(rawProfile) {
 
-    let on = false;
-    if(rawProfile.powerOn === undefined) {  }
+    //if(rawProfile.powerOn === undefined) {  }
 
     // TODO scheme from the lib?
     return rawProfile;
@@ -138,8 +152,7 @@ class Config {
     if(rawGpio === undefined) { return { disabled: true, why: 'undefined' }; }
 
     if(rawGpio.gpio === undefined) { throw Error('gpio pin not configured'); }
-    if(Number.isNaN(parseInt(rawGpio.gpio))) { throw Error('gpio pin not a number'); }
-    const gpio = rawGpio.gpio;
+    if(Number.isNaN(parseInt(rawGpio.gpio, BASE_10))) { throw Error('gpio pin not a number'); }
 
     if(rawGpio.disabled !== undefined && rawGpio.disabled !== true) {
       console.log('remove disabled attribute if not true');
@@ -149,25 +162,21 @@ class Config {
     return {
       name: which,
       disabled: disabled,
-      gpio: gpio
+      gpio: rawGpio.gpio
     };
   }
 
   static _normalizeMqtt(rawMqtt) {
-    let url = process.env.mqtturl;
-    if(rawMqtt !== undefined && rawMqtt.url === undefined) {
-      url = rawMqtt.url;
-    }
+    const envUrl = process.env.mqtturl;
+    const defaultReconnectMs = 10 * 1000;
 
-    let reconnectMs = 10 * 1000;
-    if(rawMqtt !== undefined) {
-      const S = rawMqtt.reconnectS ? rawMqtt.reconnectS : 0;
-      const Ms = rawMqtt.reconnectMs ? rawMqtt.reconnectMs : 0;
-      reconnectMs = S * 1000 + Ms;
-    }
+    if(rawMqtt === undefined) { return { url: envUrl, reconnectMs: defaultReconnectMs }; }
+
+    const url = rawMqtt.url !== undefined ? rawMqtt.url : envUrl;
+    const reconnectMs = Config._getMs(rawMqtt, 'reconnect', defaultReconnectMs);
 
     return {
-      url: process.env.mqtturl,
+      url: url,
       reconnectMs: reconnectMs
     };
   }
