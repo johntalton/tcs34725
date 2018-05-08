@@ -5,21 +5,27 @@ const EventEmitter = require('events');
 const Gpio = require('onoff').Gpio;
 
 const rasbus = require('rasbus');
-const i2c = rasbus.i2c;
 
 const Tcs34725 = require('../src/tcs34725.js');
 
 class Device {
+  // @public
   static on(config, event, cb) {
     return config.emitter.on(event, cb);
   }
 
+  /**
+   * Attempt initial device setup, start retry if needed failure.
+   *  (setup failurs are supprsed by retry, and thus promis alwasy resolves)
+   * @return promise the resolves one the process starts.
+   **/
+  // @public
   static setupDeviceWithRetry(config) {
     return Device.setupDevice(config)
       .then(() => Device.configureDevice(config))
       .catch(err => {
         console.log('initial setup failed, start retry', config.name, err.message);
-        config.retrytimer = setInterval(Device.retrySetup, config.retryIntervalMs, config);
+        config.retrytimer = setInterval(Device.retrySetup_interval, config.retryIntervalMs, config);
       });
   }
 
@@ -27,61 +33,57 @@ class Device {
     //console.log('setupDevice', config.name);
     if(config.emitter === undefined) { config.emitter = new EventEmitter(); }
 
-    return rasbus.byname(config.bus.driver).init(...config.bus.id).then(bus => {
-      config.bus.client = bus;
-      return Tcs34725.init(bus).then(tcs => {
-        return tcs.id()
-          .then(id => {
-            if(id !== Tcs34725.CHIP_ID){ throw Error('invalid/unknonw chip id: ' + id); }
-          })
-          .then(() => {
-            config.client = tcs;
-            Device.setupLED(config);
-            Device.setupInterrupt(config);
+    return rasbus.byname(config.bus.driver).init(...config.bus.id)
+      .then(bus => Tcs34725.init(bus))
+      .then(tcs => Promise.all([Promise.resolve(tcs), tcs.id()]))
+      .then(([tcs, id]) => {
+        if(id !== Tcs34725.CHIP_ID){ throw Error('invalid/unknonw chip id: ' + id); }
 
-	    console.log('device up', config.name);
-          });
+        Device.setupLED(config);
+        Device.setupInterrupt(config);
+        config.client = tcs;
+
+        console.log('Device up', config.name);
+
+        if(config.led.disabled && config.poll.flashMs !== 0) {
+          console.log('flash enabled but led is disabled or missing');
+        }
+        if(config.interrupt.disabled && config.step !== false) {
+          console.log('stepper enabled but interrupt diabled or missing');
+        }
       });
-    });
   }
 
   static configureDevice(config) {
     //console.log('setting profile', config.name);
     return config.client.setProfile(config.profile).then(() => {
       if(config.clearIntOnStart) {
-        console.log('clearing interrupt on start', config.name);
+        console.log('Device clearing interrupt on start', config.name);
         return config.client.clearInterrupt();
       }
+
+      return Promise.resolve();
     });
   }
 
-  static cleanupDevice(config) {
-    //
-    Device.stopDevice(config);
-
-    config.bus.client.close();
-    config.bus.client = undefined;
-    config.client = undefined;
-  }
-
-  static retrySetup(config) {
+  static async retrySetup_interval(config) {
     //console.log('retry setup');
-    Device.setupDevice(config)
+    await Device.setupDevice(config)
+       // TODO where is configure Device in this chain
       .catch(e => {
-
-        Device.cleanupDevice(config);
-
         console.log('retry setup failed', config.name, e.message);
       });
   }
 
+  // @public
   static startDevice(config) {
-    //console.log('start device', config.name);
+    console.log('start device', config.name, config.client);
     if(config.client === undefined) { return; }
     Device.setupPoller(config);
     Device.setupStepper(config);
   }
 
+  // @public
   static stopDevice(config) {
     //console.log('stop device', config.name);
     if(config.client === undefined) { return; }
@@ -100,13 +102,7 @@ class Device {
   }
 
   static setupStepper(config) {
-    if(config.step === undefined) { return; }
     if(config.step === false) { return }
-
-    if(config.interrupt.client === undefined) {
-      console.log('interrupt not configured', config.name);
-      return;
-    }
 
     Device.enableInterrupt(config);
   }
@@ -119,6 +115,7 @@ class Device {
     }
 
     //console.log('value', value);
+    if(value !== 1) { console.log('   interrupt high but not'); }
 
     Promise.all([
       config.client.threshold(),
@@ -187,7 +184,7 @@ class Device {
     });
   }
 
-  static poll(config) {
+  static async poll(config) {
     let steps = Promise.resolve({});
 
     // if cycle multiplier on poll is enabled do that
@@ -206,7 +203,7 @@ class Device {
     if(config.poll.status && !config.poll.profile) {
       steps = steps.then(result => config.client.status()
           .then(s => { result.valid = s.availd; result.thresholdViolation = s.aint; return result; })
-          .catch(e => { console.log('statsu poll failed', config.name, e); })
+          .catch(e => { console.log('statsu poll failed', config.name, e); return {}; })
         );
     }
 
@@ -214,12 +211,12 @@ class Device {
     if(config.poll.profile) {
       steps = steps.then(result => config.client.profile()
           .then(p => { result = p; return result; })
-          .catch(e => { console.log('profile poll failed', config.name, e); })
+          .catch(e => { console.log('profile poll failed', config.name, e); return {}; })
         );
     }
 
     // final step with catch so poll doesn't error
-    steps.then(result => {
+    await steps.then(result => {
       if((result.valid !== undefined) && !result.valid) {
         console.log('data integration not completed / not ready', config.name);
         return;
@@ -228,6 +225,9 @@ class Device {
       if(result.thresholdViolation !== undefined) {
         //console.log('polled interrupt value', config.name, result.thresholdViolation);
         // TODO software-interrupt inmpmentation to wire back to our interrupt.client impl
+        if(result.thresholdViolation === true) {
+          //
+        }
       }
 
       if(config.poll.skipData) { return; }
@@ -241,16 +241,15 @@ class Device {
     .catch(e => { console.log('error', config.name, e); });
   }
 
-
-
-
   // --------------------------------------------------------------------------
 
   static setupLED(config) {
+    if(config.led.disabled) { return; }
     config.led.client = new Gpio(config.led.gpio, 'out');
   }
 
   static ledOnWithDelay(config) {
+    if(config.led.disabled) { return Promise.resolve(); }
     if(config.poll.flashMs === 0) { return Promise.resolve(); }
     //console.log('flash for Ms:', config.poll.flashMs);
 
@@ -267,6 +266,7 @@ class Device {
   }
 
   static ledOff(config) {
+    if(config.led.disabled) { return Promise.resolve(); }
     if(config.poll.flashMs === 0) { return Promise.resolve(); }
 
     // todo reenable interrupt if disabled during flash
@@ -279,19 +279,25 @@ class Device {
     });
   }
 
+  // --------------------------------------------------------------------------
 
   static setupInterrupt(config) {
+    if(config.interrupt.disabled) { return; }
     config.interrupt.client = new Gpio(config.interrupt.gpio, 'in', 'rising', { activeLow: true });
   }
 
   static enableInterrupt(config) {
-    // cache so we can remove specific watch
+    // todo rename? as this is a full setup/teardown for each enable/disable and not for pauseing
+    //   as this causes a full cleanup of the underlining client. pause should be in the actaull handler?
+
+    if(config.interrupt.disabled) { return; }
+    if(config.interrupt.client === undefined) { throw Error('client not defined'); } // todo over agressiv checking
     config.interrupt.wcb = (err, value) => Device.watchInt(config, err, value);
     config.interrupt.client.watch(config.interrupt.wcb);
   }
 
   static disableInterrupt(config) {
-    if(config.interrupt == undefined) { return; }
+    if(config.interrupt.disabled) { return; }
     config.interrupt.client.unwatch(config.interrupt.wcb);
     delete config.interrupt.wcb;
   }

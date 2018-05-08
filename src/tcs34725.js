@@ -85,6 +85,8 @@ class Tcs34725 {
     this.bus = bus;
   }
 
+  close() { return this.bus.close(); }
+
   id() { return Common._id(this.bus); }
 
   profile() { return Common._profile(this.bus); }
@@ -547,9 +549,9 @@ class Converter {
   static calculateRGB(raw) {
     if(raw.c <= 0) { return { r: 0, g: 0, b: 0, zero: true }; }
 
-    const red = raw.r / raw.c;
-    const green = raw.g / raw.c;
-    const blue = raw.b / raw.c;
+    const red = raw.r / (1.0 * raw.c);
+    const green = raw.g / (1.0 * raw.c);
+    const blue = raw.b / (1.0 * raw.c);
 
     const r = Math.trunc(Math.pow(Math.trunc(red * 256) / 255, 2.5) * 255);
     const g = Math.trunc(Math.pow(Math.trunc(green * 256) / 255, 2.5) * 255);

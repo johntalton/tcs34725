@@ -30,6 +30,8 @@ class Config {
     return d.map((rawDevice, index) => {
       const name = rawDevice.name ? rawDevice.name : '#' + index;
 
+      const active = rawDevice.active !== undefined ? rawDevice.active : true;
+
       const S = rawDevice.retryIntervalS ? rawDevice.retryIntervalS : 0;
       const Ms = rawDevice.retryIntervalMs ? rawDevice.retryIntervalMs : 0;
       const retryIntervalMs = S * 1000 + Ms;
@@ -37,6 +39,7 @@ class Config {
       return {
         name: name,
         bus: Config._normalizeBus(rawDevice.bus),
+        active: active,
 
         retryIntervalMs: retryIntervalMs,
 
@@ -108,7 +111,7 @@ class Config {
   }
 
   static _normalizeStep(rawStep) {
-    if(rawStep === undefined) { return false; }
+    if(rawStep === undefined) { return false; } // todo { disabled: true }
 
     // TODO
     return rawStep
@@ -119,11 +122,8 @@ class Config {
     let on = false;
     if(rawProfile.powerOn === undefined) {  }
 
+    // TODO scheme from the lib?
     return rawProfile;
-
-    return {
-      powerOn: on
-    };
   }
 
   static _normalizeLed(rawLed) {
@@ -135,12 +135,20 @@ class Config {
   }
 
   static _normalizeGpio(rawGpio, which) {
-    if(rawGpio === undefined) { return undefined; }
+    if(rawGpio === undefined) { return { disabled: true, why: 'undefined' }; }
 
     if(rawGpio.gpio === undefined) { throw Error('gpio pin not configured'); }
+    if(Number.isNaN(parseInt(rawGpio.gpio))) { throw Error('gpio pin not a number'); }
     const gpio = rawGpio.gpio;
 
+    if(rawGpio.disabled !== undefined && rawGpio.disabled !== true) {
+      console.log('remove disabled attribute if not true');
+    }
+    const disabled = (rawGpio.disabled !== undefined) ? rawGpio.disabled : false;
+
     return {
+      name: which,
+      disabled: disabled,
       gpio: gpio
     };
   }

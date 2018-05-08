@@ -2,29 +2,9 @@
 
 const Convert = require('color-convert');
 
-
 const Config = require('./client-config.js');
 const Store = require('./client-store.js');
 const Device = require('./client-device.js');
-
-const colurs = {
-  '200': { name: 'red',          bg: 41  },
-  '020': { name: 'green',        bg: 42  },
-  '220': { name: 'yellow',       bg: 43  },
-  '002': { name: 'blue',         bg: 44  },
-  '202': { name: 'magenta',      bg: 45  },
-  '022': { name: 'cyan',         bg: 46  },
-  '222': { name: 'lightgrey',    bg: 47  },
-  '111': { name: 'darkgrey',     bg: 100 },
-  '100': { name: 'lightred',     bg: 101 },
-  '010': { name: 'lightgreen',   bg: 102 },
-  '110': { name: 'lightyellow',  bg: 103 },
-  '001': { name: 'lightblue',    bg: 104 },
-  '101': { name: 'lightmagenta', bg: 105 },
-  '011': { name: 'lightcyan',    bg: 106 }
-};
-
-
 
 function configureStore(config) {
   return Store.make(config).then(() => {
@@ -43,13 +23,19 @@ function stop(config) {
   config.devices.forEach(d => Device.stopDevice(d));
 }
 
-
 function configureDevices(config) {
   return Promise.all(config.devices.map(device => {
+    // if we aren't active, just skip all together
+    if(!device.active) {
+      console.log('Skip inactive device:', device.name);
+      return Promise.resolve();
+    }
+
     return Device.setupDeviceWithRetry(device).then(() => {
       Device.on(device, 'data', (data, result) => dataHandler(config, device, data, result));
       Device.on(device, 'step', (threshold, direction, rawC) => stepHandler(config, device, threshold, direction, rawC));
 
+      // todo startup hack for state, should move to state machine
       if(config.mqtt.client.connected){ return Device.startDevice(device); }
     });
   }));
@@ -59,7 +45,7 @@ function dataHandler(config, device, data, result) {
   const bgColor = '\x1b[' + (Convert.rgb.ansi16(data.rgb.r, data.rgb.g, data.rgb.b) + 10) + 'm';
   const resetColor = '\x1b[0m';
   console.log('\t"' + device.name + '"', data.raw.c, 'rgb:', bgColor + JSON.stringify(data.rgb) + resetColor, 'lux:', Math.trunc(data.lux, 2));
-  //console.log(data);
+  // console.log(data);
 
   Store.insert(config, device, data)
     .catch(e => { console.log('storage error', device.name, e); })
@@ -81,6 +67,7 @@ Config.config('./client.json').then(config => {
   return Promise.resolve()
     .then(() => configureStore(config))
     .then(() => configureDevices(config))
+//    .then(() => console.log(config.devices[1]))
 }).catch(e => {
   console.log('top level error', e);
 });

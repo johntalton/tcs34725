@@ -4,25 +4,29 @@
     {
       "bus": { "driver": "i2cbus", "id": [1, 666] },
       "retryIntervalS": 57,
+      "active": false,
 
       "profile": {}
     },
     {
       "name": "Indoor Main Room",
       "bus": { "driver": "i2cbus", "id": [1, 41] },
+      "active": true,
 
       "retryIntervalS": 13,
 
       "poll": {
-        "pollIntervalS": 13,
-        "flash": false,
+        "pollIntervalS": 17,
+        "flash": true,
         "status": true,
         "profile": true,
-        "_cycleMultiplyer": [1, 16]
+        "_cycleMultiplyer": [1, 16],
+        "_autoRange": false
       },
-      "step": { "range": 100, "jump": true },
+      "step": { "range": 100, "jump": true, "_autoRange": false },
 
       "clearIntOnStart": true,
+      "_disabledIntOnFlash": true,
 
       "profile": {
         "powerOn": true,
@@ -38,11 +42,11 @@
         "wait": true,
         "waitTimeS": 7,
 
-        "multiplier": 16
+        "multiplier": 4
       },
 
-      "led": { "gpio": 13 },
-      "interrupt": { "gpio": 4 }
+      "led": { "gpio": 13, "disabled": true },
+      "interrupt": { "gpio": 4, "disabled": false }
     }
   ]
 }
