@@ -46,7 +46,7 @@
       },
 
       "led": { "gpio": 13, "disabled": true },
-      "interrupt": { "gpio": 4, "disabled": true }
+      "interrupt": { "gpio": 4, "disabled": false }
     }
   ]
 }

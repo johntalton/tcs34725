@@ -76,7 +76,7 @@ class Device {
 
   // @public
   static startDevice(config) {
-    console.log('start device', config.name, config.client);
+    console.log('start device', config.name);
     if(config.client === undefined) { return; }
     Device.setupPoller(config);
     Device.setupStepper(config);

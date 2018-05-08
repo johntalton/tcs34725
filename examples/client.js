@@ -28,7 +28,7 @@ function dataHandler(config, device, data, result) {
   const resetColor = '\x1b[0m';
   console.log('\t"' + device.name + '"', data.raw.c, 'rgb:', bgColor + JSON.stringify(data.rgb) + resetColor, 'lux:', Math.trunc(data.lux, 2));
   // console.log(data);
-  console.log(result);
+  //console.log(result);
 
   Store.insert(config, device, data)
     .catch(e => { console.log('storage error', device.name, e); })
