@@ -16,22 +16,31 @@
       "retryIntervalS": 13,
 
       "poll": {
-        "pollIntervalS": 17,
+        "pollIntervalS": 13,
         "flash": true,
         "status": true,
         "profile": true,
         "_cycleMultiplyer": [1, 16],
-        "_autoRange": false
+        "_autoRange": false,
+        "_sleepMode": true
       },
       "step": { "range": 100, "jump": true, "_autoRange": false },
 
+      "_range": {
+        "1": { "luxRange": [0, 10], "integrationTimeMs": 500, "filtering": 1 },
+        "4": [10, 100],
+        "16": [100, 1000],
+        "64": [100, -1]
+      },
+
       "clearIntOnStart": true,
       "_disabledIntOnFlash": true,
+      "_flashOnWake": 3,
 
       "profile": {
         "powerOn": true,
         "active": true,
-        "integrationTimeMs": 500,
+        "integrationTimeMs": 150,
 
         "interrupts": true,
         "filtering": 1,
@@ -45,8 +54,8 @@
         "multiplier": 4
       },
 
-      "led": { "gpio": 13, "disabled": true },
-      "interrupt": { "gpio": 4, "disabled": false }
+      "led": { "gpio": 502, "disabled": false },
+      "interrupt": { "gpio": 501, "disabled": false }
     }
   ]
 }

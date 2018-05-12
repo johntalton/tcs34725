@@ -116,6 +116,7 @@ class Device {
     //console.log('value', value);
     if(value !== 1) { console.log('   interrupt high but not'); }
 
+    // TODO async off into nowhere
     Promise.all([
       config.client.threshold(),
       config.client.data()
@@ -217,7 +218,7 @@ class Device {
     // final step with catch so poll doesn't error
     await steps.then(result => {
       if(result.valid !== undefined && !result.valid) {
-        console.log('data integration not completed / not ready', config.name);
+        console.log('data integration not completed / not ready', config.name, result);
         return Promise.resolve();
       }
 

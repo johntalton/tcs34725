@@ -3,7 +3,7 @@ const { Common, Converter } = require('./common.js');
 
 
 const TCS34725_I2C_ADDRESS = 0x29;
-const TCS34725_I2C_PART_NUMBER = 0x44 // TCS34721 and TCS34725
+const TCS34725_I2C_PART_NUMBER = 0x44; // TCS34721 and TCS34725
 // const TCS_I2C_PART_NUMBER = 0x4D // TCS34723 and TCS34727
 
 
@@ -11,7 +11,7 @@ const TCS34725_I2C_PART_NUMBER = 0x44 // TCS34721 and TCS34725
  *
  */
 class Tcs34725 {
-  static init(bus){
+  static init(bus) {
     return Promise.resolve(new Tcs34725(bus));
   }
 

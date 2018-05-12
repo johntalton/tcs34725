@@ -75,6 +75,9 @@ const APRES_60    = 0b1111;
  *
  */
 class Converter {
+  /**
+   * @param profile
+   **/
   static formatProfile(enable, timing, wtiming, threshold, persistence, config, control, status) {
     // console.log('format profile', config.wlong, status);
     return {
@@ -84,8 +87,6 @@ class Converter {
       wait: enable.WEN,
       waitTime: Converter.formatWTiming(wtiming, config.wlong),
       integrationTime: Converter.formatTiming(timing),
-      //thresholdHigh: threshold.high,
-      //thresholdLow: threshold.low,
       threshold: { low: threshold.low, high: threshold.high },
       filtering: Converter.formatPersistence(persistence),
       gain: Converter.formatControl(control),
@@ -140,12 +141,13 @@ class Converter {
     let assumedWlong = false;
     let waitCount = Math.round(ms / 2.4);
 
-    if(ms > 256){
+    if(ms > 256) {
       // assume wlong true desired
       assumedWlong = true;
       waitCount = Math.round(ms / (2.4 * 12));
-      if(waitCount > 256) { throw new Error('millisecons out of range: ' + ms); }
     }
+
+    if(waitCount > 256) { throw new Error('millisecons out of range: ' + ms); }
     return [Converter.toWTimingCount(waitCount), assumedWlong];
   }
 
@@ -166,7 +168,7 @@ class Converter {
       wtime: wtiming.wtime,
       wlong: wlong,
       waitCount: waitCount,
-      milliseconds: ms,
+      milliseconds: ms
     };
   }
 
@@ -183,7 +185,7 @@ class Converter {
     return {
       low: low,
       high: high
-    }
+    };
   }
 
   static toPersistence(persistence) {
@@ -215,7 +217,7 @@ class Converter {
 
   static parsePersistence(buffer) {
     const value = buffer[0] & APRES;
-    return { apres: value }
+    return { apres: value };
   }
 
   static formatPersistence(persistence) {
@@ -309,7 +311,7 @@ class Converter {
       g: raw.g / 0xFFFF,
       b: raw.b / 0xFFFF,
       c: raw.c / 0XFFFF
-    }
+    };
   }
 
   static calculateRGB(raw) {
@@ -327,7 +329,7 @@ class Converter {
   }
 
   static calculateLuxAndTempature(raw) {
-    const {r, g, b } = raw;
+    const { r, g, b } = raw;
 
     // taken from adafruit version, not sure source or assumptions
 
@@ -339,9 +341,12 @@ class Converter {
     const yc = y / (x + y + z);
 
     const n = (xc - 0.3320) / (0.1858 - yc);
-    const cct = (449.0 * Math.pow(n, 3)) + (3525.0 * Math.pow(n, 2)) + (6823.3 * n) + 5520.33;
+    const cct = (449.0 * Math.pow(n, 3)) +
+                (3525.0 * Math.pow(n, 2)) +
+                (6823.3 * n) +
+                5520.33;
 
-    return { lux: y, tempatureK: cct }
+    return { lux: y, tempatureK: cct };
   }
 }
 
@@ -402,7 +407,7 @@ class Common {
       bus.write(AILTL_REGISTER | TCS34725_COMMAND_BIT, threshold[0]),
       bus.write(AILTH_REGISTER | TCS34725_COMMAND_BIT, threshold[1]),
       bus.write(AIHTL_REGISTER | TCS34725_COMMAND_BIT, threshold[2]),
-      bus.write(AIHTH_REGISTER | TCS34725_COMMAND_BIT, threshold[3]),
+      bus.write(AIHTH_REGISTER | TCS34725_COMMAND_BIT, threshold[3])
     ]);
   }
 
@@ -462,7 +467,7 @@ class Common {
   }
   */
 
-  static _raw_profile(bus) {
+  static _rawProfile(bus) {
     return Promise.all([
       Common._enable(bus),
       Common._timing(bus),
@@ -476,7 +481,7 @@ class Common {
   }
 
   static _profile(bus) {
-    return Common._raw_profile(bus).then(parts => {
+    return Common._rawProfile(bus).then(parts => {
       const [enable, timing, wtiming, threshold, persistence, config, control, status] = parts;
       return Converter.formatProfile(enable, timing, wtiming, threshold, persistence, config, control, status);
     });
@@ -496,7 +501,7 @@ class Common {
   }
 
   static clearInterrupt(bus) {
-    //console.log('clearning interupt');
+    // console.log('clearning interupt');
     const cmd = (CMD_TYPE_SPECIAL << 5) | CMD_SPECIAL_CLEAR;
     return bus.writeSpecial(cmd | TCS34725_COMMAND_BIT);
   }
@@ -518,8 +523,6 @@ class Common {
     return Common._dataBulk(bus).then(Converter.formatData);
   }
 }
-
-
 
 module.exports.Common = Common;
 module.exports.Converter = Converter;
