@@ -24,6 +24,7 @@ class Device {
       .then(() => Device.configureDevice(config))
       .catch(err => {
         console.log('initial setup failed, start retry', config.name, err.message);
+        console.log(err);
         config.retrytimer = setInterval(Device.retrySetup_interval, config.retryIntervalMs, config);
       });
   }
@@ -54,7 +55,8 @@ class Device {
   }
 
   static configureDevice(config) {
-    //console.log('setting profile', config.name);
+    // console.log('setting profile', config.name);
+    // TODO disable profile on setup if previously configured, or if trueded state
     return config.client.setProfile(config.profile).then(() => {
       if(config.clearIntOnStart) {
         console.log('Device clearing interrupt on start', config.name);
@@ -66,6 +68,9 @@ class Device {
   }
 
   static async retrySetup_interval(config) {
+    // top level interval callbak must await all promises
+    // and catch all errors
+
     //console.log('retry setup');
     await Device.setupDevice(config)
        // TODO where is configure Device in this chain
@@ -106,7 +111,10 @@ class Device {
     Device.enableInterrupt(config);
   }
 
-  static watchInt(config, err, value) {
+  static async watchInt(config, err, value) {
+    // top level init watch must
+    // await all promises and catch all errors
+
     if(err) {
       console.log('gpio interrupt error', config.name, err);
       // todo teardown client or just ignore, or what
@@ -116,77 +124,119 @@ class Device {
     //console.log('value', value);
     if(value !== 1) { console.log('   interrupt high but not'); }
 
-    // TODO async off into nowhere
-    Promise.all([
+    await Promise.all([
       config.client.threshold(),
       config.client.data()
     ])
-    .then(([threshold, data]) => {
-      let direction = 0;
-      if(data.raw.c > threshold.high) {
-        direction = +1;
-      }
-      else if(data.raw.c < threshold.low) {
-        direction = -1;
-      }
-      else { direction = 0; }
-
-      //console.log('reconfigure thresholds', config.name, data.raw.c, threshold, direction);
-
-      let first = Promise.resolve();
-      let newt = threshold;
-      if(direction !== 0) {
-        // this is the working range, not the configrued range
-        // this allows the system to continue working as expected
-        // even when the profile is being configured externaly.
-        const range = threshold.high - threshold.low;
-
-        if(config.step.jump) {
-          const step = Math.trunc(range / 2);
-          // todo, this should actaully follow the step sizes
-          // that the existing auto step bellow uses.  this current
-          // impl is more of a 'center' around using existing range
-          // which is a bit odd.  But the goal is to not have to walk
-          // the entire threshold steps then this is a solution
-          newt = { low: data.raw.c - step, high: data.raw.c + step, touched: true };
-        } else {
-          // standard mode is to walk the theshold steps
-          // in the direction of our target. Can be usefull
-          // for clients that expect all ranges traversed
-          // (some client that have longer running times
-          // - like day cycles - may not have been programed
-          // to expect "jumps" in the ranges and thus this
-          // compensates for that)
-          const step = direction * Math.trunc(range / 2);
-          const low = threshold.low + step;
-          const high = threshold.high + step;
-          newt = { low: low, high: high, touched: true };
-        }
-
-        // should be handled by above algos in smarter way, good safety
-        if(newt.low < 0) { newt.low = 0; }
-        if(newt.high < 0) { newt.low = 0; }
-        if(newt.high > 0xFFFF) { newt.low = 0xFFFF; } // todo max thresh value
-
-        // make fisrt our set call
-        first = config.client.setThreshold(newt.low, newt.high);
-      }
-      else { console.log('direction Zero, odd as this is interrupt driven, quick mover?'); }
-
-      // after that, we just emit the change and clear
-      return first.then(() => {
-        config.emitter.emit('step', newt, direction, data.raw.c);
-        return config.client.clearInterrupt();
-      });
-    })
+    .then(([threshold, data]) => Device.handleThreshold(config, threshold, data))
     .catch(e => {
-      console.log('error in stepper', config.name, e);
+      console.log('error in watch interrupt', config.name, e);
+    });
+
+  }
+
+  static handleThreshold(config, threshold, data) {
+    let direction = 0;
+    if(data.raw.c > threshold.high) {
+      direction = +1;
+    }
+    else if(data.raw.c < threshold.low) {
+      direction = -1;
+    }
+    else { direction = 0; }
+
+    //console.log('reconfigure thresholds', config.name, data.raw.c, threshold, direction);
+
+    let first = Promise.resolve();
+    let newt = threshold;
+    if(direction !== 0) {
+      // this is the working range, not the configrued range
+      // this allows the system to continue working as expected
+      // even when the profile is being configured externaly.
+      const range = threshold.high - threshold.low;
+
+      if(config.step.jump) {
+        const step = Math.trunc(range / 2);
+        // todo, this should actaully follow the step sizes
+        // that the existing auto step bellow uses.  this current
+        // impl is more of a 'center' around using existing range
+        // which is a bit odd.  But the goal is to not have to walk
+        // the entire threshold steps then this is a solution
+        newt = { low: data.raw.c - step, high: data.raw.c + step, touched: true };
+      } else {
+        // standard mode is to walk the theshold steps
+        // in the direction of our target. Can be usefull
+        // for clients that expect all ranges traversed
+        // (some client that have longer running times
+        // - like day cycles - may not have been programed
+        // to expect "jumps" in the ranges and thus this
+        // compensates for that)
+        const step = direction * Math.trunc(range / 2);
+        const low = threshold.low + step;
+        const high = threshold.high + step;
+        newt = { low: low, high: high, touched: true };
+      }
+
+      // should be handled by above algos in smarter way, good safety
+      if(newt.low < 0) { newt.low = 0; }
+      if(newt.high < 0) { newt.low = 0; }
+      if(newt.high > 0xFFFF) { newt.low = 0xFFFF; } // todo max thresh value
+
+      // make fisrt our set call
+      first = config.client.setThreshold(newt.low, newt.high);
+    }
+    else { console.log('direction Zero, odd as this is interrupt driven, quick mover?'); }
+
+    // after that, we just emit the change and clear
+    return first.then(() => {
+      config.emitter.emit('step', newt, direction, data.raw.c);
+      return config.client.clearInterrupt();
     });
   }
 
-  static async poll(config) {
-    let steps = Promise.resolve({});
+  static pollDeviceInfo(config) {
+    // if nothing enbabled, just return
+    if(config.poll.status === false && config.poll.profile === false) {
+      return Promise.resolve({});
+    }
 
+    // profile true overrides all (none case handled above)
+    const full = config.poll.profile;
+
+    if(!full) {
+      // not full is just status
+      return config.client.status()
+        .then(s => {
+          return {
+            valid: s.avalid,
+            thresholdViolation: s.aint
+          };
+        });
+    }
+
+    // full profile fetch
+    return config.client.profile();
+  }
+
+  static pollPerformSoftwareInterrupt(config, result, data) {
+    if(result.thresholdViolation !== undefined) {
+      // console.log('polled interrupt value', config.name, result.thresholdViolation);
+      if(result.thresholdViolation === true) {
+        //
+        if(result.threshold === undefined) {
+          return Promise.reject(Error('software interrupt skipped, no thresholdr'));
+        }
+        if(data === undefined) {
+          return Promise.reject(Error('software interrupt skipped, no data'));
+        }
+
+        return Device.handleThreshold(config, result.threshold, data);
+      }
+    }
+    return Promise.resolve(result);
+  }
+
+  static pollPerformMultiplyerRotate() {
     // if cycle multiplier on poll is enabled do that
     // false | array
     /*if(config.poll.cycleMultiplyer !== false) {
@@ -199,46 +249,57 @@ class Device {
       steps = steps.then(result => config.client.setProfile(cycleprofile));
     }*/
 
-    // if status polling enabled do that first (skip if profile as it is included there)
-    if(config.poll.status && !config.poll.profile) {
-      steps = steps.then(result => config.client.status()
-          .then(s => { result.valid = s.availd; result.thresholdViolation = s.aint; return result; })
-          .catch(e => { console.log('statsu poll failed', config.name, e); return {}; })
-        );
-    }
+    return Promise.resolve();
+  }
 
-    // if profile polling is enabled, do that now
-    if(config.poll.profile) {
-      steps = steps.then(() => config.client.profile()
-          .then(p => { return p; })
-          .catch(e => { console.log('profile poll failed', config.name, e); return {}; })
-        );
-    }
+  static pollPerformBeforeAll(config, result) {
+    return Promise.all([
+      Device.pollPerformMultiplyerRotate()
+    ])
+    .catch(e => { console.log('Error in Before action', e); })
+  }
 
-    // final step with catch so poll doesn't error
-    await steps.then(result => {
+  static pollPerformAfterAll(config, result, data) {
+    return Promise.all([
+      Device.pollPerformSoftwareInterrupt(config, result, data)
+    ])
+    .catch(e => { console.log('Error in After action', e); })
+  }
+
+  static async poll(config) {
+    // top level of poll function is syncrounous, and catches all errors
+
+    // first, get any info before we read data, if configured
+    await Device.pollDeviceInfo(config).then(result => {
+      // check results to see if all ok, if we bothered running anything
       if(result.valid !== undefined && !result.valid) {
         console.log('data integration not completed / not ready', config.name, result);
         return Promise.resolve();
       }
 
-      if(result.thresholdViolation !== undefined) {
-        //console.log('polled interrupt value', config.name, result.thresholdViolation);
-        // TODO software-interrupt inmpmentation to wire back to our interrupt.client impl
-        if(result.thresholdViolation === true) {
-          //
-        }
-      }
+      return Device.pollPerformBeforeAll(config, result)
+        .then(() => result); // pass along
+    })
+    .then(result => {
 
-      if(config.poll.skipData) { return Promise.resolve(); }
+      const swInterruptEnabled = true;
 
+      // lastly if we skip data polls, then we are done, unless
+      // software interrupts are on and there was a threshold violation
+      // in which case a read is needed to capture state.
+      const skipData = config.poll.skipData &&
+        ((!swInterruptEnabled) || (swInterruptEnabled && !result.thresholdViolation));
+
+      if(skipData) { console.log('skip'); return; }
+
+      // do that glorious data read
       return Device.ledOnWithDelay(config)
         .then(() => config.client.data())
-        .then(data => { config.emitter.emit('data', data, result); })
+        .then(data => Device.pollPerformAfterAll(config, result, data)
+          .then(() => { config.emitter.emit('data', data, result); }))
         .finally(() => Device.ledOff(config));
-
     })
-    .catch(e => { console.log('error', config.name, e); });
+    .catch(e => { console.log('poll error', config.name, e); });
   }
 
   // --------------------------------------------------------------------------

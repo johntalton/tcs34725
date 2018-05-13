@@ -20,6 +20,7 @@
         "flash": true,
         "status": true,
         "profile": true,
+        "skipData": true,
         "_cycleMultiplyer": [1, 16],
         "_autoRange": false,
         "_sleepMode": true
@@ -54,8 +55,8 @@
         "multiplier": 4
       },
 
-      "led": { "gpio": 502, "disabled": false },
-      "interrupt": { "gpio": 501, "disabled": false }
+      "led": { "gpio": 502, "disabled": true },
+      "interrupt": { "gpio": 501, "disabled": true }
     }
   ]
 }
