@@ -30,14 +30,14 @@ class Device {
   }
 
   static setupDevice(config) {
-    //console.log('setupDevice', config.name);
+    // console.log('setupDevice', config.name);
     if(config.emitter === undefined) { config.emitter = new EventEmitter(); }
 
     return rasbus.byname(config.bus.driver).init(...config.bus.id)
       .then(bus => Tcs34725.init(bus))
       .then(tcs => Promise.all([Promise.resolve(tcs), tcs.id()]))
       .then(([tcs, id]) => {
-        if(id !== Tcs34725.CHIP_ID){ throw Error('invalid/unknonw chip id: ' + id); }
+        if(id !== Tcs34725.CHIP_ID) { throw Error('invalid/unknonw chip id: ' + id); }
 
         Device.setupLED(config);
         Device.setupInterrupt(config);
@@ -67,11 +67,11 @@ class Device {
     });
   }
 
-  static async retrySetup_interval(config) {
+  static async retrySetupInterval(config) {
     // top level interval callbak must await all promises
     // and catch all errors
 
-    //console.log('retry setup');
+    // console.log('retry setup');
     await Device.setupDevice(config)
        // TODO where is configure Device in this chain
       .catch(e => {
@@ -89,7 +89,7 @@ class Device {
 
   // @public
   static stopDevice(config) {
-    //console.log('stop device', config.name);
+    // console.log('stop device', config.name);
     if(config.client === undefined) { return; }
     if(config.poll) {
       clearInterval(config.poll.timer);
@@ -101,12 +101,12 @@ class Device {
 
   static setupPoller(config) {
     if(config.poll === undefined) { return; }
-    if(config.poll === false) { return }
+    if(config.poll === false) { return; }
     config.poll.timer = setInterval(Device.poll, config.poll.pollIntervalMs, config);
   }
 
   static setupStepper(config) {
-    if(config.step === false) { return }
+    if(config.step === false) { return; }
 
     Device.enableInterrupt(config);
   }
@@ -121,31 +121,28 @@ class Device {
       return;
     }
 
-    //console.log('value', value);
+    // console.log('value', value);
     if(value !== 1) { console.log('   interrupt high but not'); }
 
     await Promise.all([
       config.client.threshold(),
       config.client.data()
     ])
-    .then(([threshold, data]) => Device.handleThreshold(config, threshold, data))
-    .catch(e => {
-      console.log('error in watch interrupt', config.name, e);
-    });
-
+      .then(([threshold, data]) => Device.handleThreshold(config, threshold, data))
+      .catch(e => {
+        console.log('error in watch interrupt', config.name, e);
+      });
   }
 
   static handleThreshold(config, threshold, data) {
     let direction = 0;
     if(data.raw.c > threshold.high) {
       direction = +1;
-    }
-    else if(data.raw.c < threshold.low) {
+    } else if(data.raw.c < threshold.low) {
       direction = -1;
-    }
-    else { direction = 0; }
+    } else { direction = 0; }
 
-    //console.log('reconfigure thresholds', config.name, data.raw.c, threshold, direction);
+    // console.log('reconfigure thresholds', config.name, data.raw.c, threshold, direction);
 
     let first = Promise.resolve();
     let newt = threshold;
@@ -184,8 +181,9 @@ class Device {
 
       // make fisrt our set call
       first = config.client.setThreshold(newt.low, newt.high);
+    } else {
+      console.log('direction Zero, odd as this is interrupt driven, quick mover?');
     }
-    else { console.log('direction Zero, odd as this is interrupt driven, quick mover?'); }
 
     // after that, we just emit the change and clear
     return first.then(() => {
@@ -239,7 +237,7 @@ class Device {
   static pollPerformMultiplyerRotate() {
     // if cycle multiplier on poll is enabled do that
     // false | array
-    /*if(config.poll.cycleMultiplyer !== false) {
+    /* if(config.poll.cycleMultiplyer !== false) {
       const knownM = [1, 4, 16, 16]; // todo
       if(config.poll.lastMultiplierIndex === undefined) { config.poll.lastMultiplierIndex = 0; }
       const newM = knownM[config.poll.lastMultiplierIndex];
@@ -247,7 +245,7 @@ class Device {
       if(config.poll.lastMultiplierIndex >= knownM.length) { config.poll.lastMultiplierIndex = 0; }
       const cycleprofile = { ...config.profile, multiplier: newM };
       steps = steps.then(result => config.client.setProfile(cycleprofile));
-    }*/
+    } */
 
     return Promise.resolve();
   }
@@ -256,50 +254,50 @@ class Device {
     return Promise.all([
       Device.pollPerformMultiplyerRotate()
     ])
-    .catch(e => { console.log('Error in Before action', e); })
+    .catch(e => { console.log('Error in Before action', e); });
   }
 
   static pollPerformAfterAll(config, result, data) {
     return Promise.all([
       Device.pollPerformSoftwareInterrupt(config, result, data)
     ])
-    .catch(e => { console.log('Error in After action', e); })
+    .catch(e => { console.log('Error in After action', e); });
   }
 
   static async poll(config) {
     // top level of poll function is syncrounous, and catches all errors
 
     // first, get any info before we read data, if configured
-    await Device.pollDeviceInfo(config).then(result => {
-      // check results to see if all ok, if we bothered running anything
-      if(result.valid !== undefined && !result.valid) {
-        console.log('data integration not completed / not ready', config.name, result);
-        return Promise.resolve();
-      }
+    await Device.pollDeviceInfo(config)
+      .then(result => {
+        // check results to see if all ok, if we bothered running anything
+        if(result.valid !== undefined && !result.valid) {
+          console.log('data integration not completed / not ready', config.name, result);
+          return Promise.resolve();
+        }
 
-      return Device.pollPerformBeforeAll(config, result)
-        .then(() => result); // pass along
-    })
-    .then(result => {
+        return Device.pollPerformBeforeAll(config, result)
+          .then(() => result); // pass along
+      })
+      .then(result => {
+        const swInterruptEnabled = true;
 
-      const swInterruptEnabled = true;
+        // lastly if we skip data polls, then we are done, unless
+        // software interrupts are on and there was a threshold violation
+        // in which case a read is needed to capture state.
+        const skipData = config.poll.skipData &&
+          ((!swInterruptEnabled) || (swInterruptEnabled && !result.thresholdViolation));
 
-      // lastly if we skip data polls, then we are done, unless
-      // software interrupts are on and there was a threshold violation
-      // in which case a read is needed to capture state.
-      const skipData = config.poll.skipData &&
-        ((!swInterruptEnabled) || (swInterruptEnabled && !result.thresholdViolation));
+        if(skipData) { console.log('skip'); return Promise.resolve(); }
 
-      if(skipData) { console.log('skip'); return; }
-
-      // do that glorious data read
-      return Device.ledOnWithDelay(config)
-        .then(() => config.client.data())
-        .then(data => Device.pollPerformAfterAll(config, result, data)
-          .then(() => { config.emitter.emit('data', data, result); }))
-        .finally(() => Device.ledOff(config));
-    })
-    .catch(e => { console.log('poll error', config.name, e); });
+        // do that glorious data read
+        return Device.ledOnWithDelay(config)
+          .then(() => config.client.data())
+          .then(data => Device.pollPerformAfterAll(config, result, data)
+            .then(() => { config.emitter.emit('data', data, result); }))
+          .finally(() => Device.ledOff(config));
+      })
+      .catch(e => { console.log('poll error', config.name, e); });
   }
 
   // --------------------------------------------------------------------------
@@ -312,7 +310,7 @@ class Device {
   static ledOnWithDelay(config) {
     if(config.led.disabled) { return Promise.resolve(); }
     if(config.poll.flashMs === 0) { return Promise.resolve(); }
-    //console.log('flash for Ms:', config.poll.flashMs);
+    // console.log('flash for Ms:', config.poll.flashMs);
 
     // todo suppress interrupt if desired by config during flash
 

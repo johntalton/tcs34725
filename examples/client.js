@@ -28,10 +28,11 @@ function dataHandler(config, device, data, result) {
   const resetColor = '\x1b[0m';
   console.log('\t"' + device.name + '"', data.raw.c, 'rgb:', bgColor + JSON.stringify(data.rgb) + resetColor, 'lux:', Math.trunc(data.lux, 2));
   // console.log(data);
-  //console.log(result);
+  // console.log(result);
 
+  // todo await
   Store.insert(config, device, data)
-    .catch(e => { console.log('storage error', device.name, e); })
+    .catch(e => { console.log('storage error', device.name, e); });
 }
 
 function stepHandler(config, device, threshold, direction, rawC) {
@@ -42,8 +43,10 @@ function stepHandler(config, device, threshold, direction, rawC) {
     threshold: threshold,
     direction: direction
   };
+
+  // todo await
   Store.insertStep(config, device, data)
-    .catch(e => { console.log('storage error', device.name, e); })
+    .catch(e => { console.log('storage error', device.name, e); });
 }
 
 function configureDevices(config) {
@@ -59,7 +62,7 @@ function configureDevices(config) {
       Device.on(device, 'step', (threshold, direction, rawC) => stepHandler(config, device, threshold, direction, rawC));
 
       // todo startup hack for state, should move to state machine
-      if(config.mqtt.client.connected){ return Device.startDevice(device); }
+      if(config.mqtt.client.connected) { return Device.startDevice(device); }
       return Promise.resolve();
     });
   }));
@@ -68,7 +71,7 @@ function configureDevices(config) {
 Config.config('./client.json').then(config => {
   return Promise.resolve()
     .then(() => configureStore(config))
-    .then(() => configureDevices(config))
+    .then(() => configureDevices(config));
 //    .then(() => console.log(config.devices[1]))
 }).catch(e => {
   console.log('top level error', e);

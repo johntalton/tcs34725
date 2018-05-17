@@ -1,4 +1,3 @@
-"use stict";
 
 const Repler = require('repler');
 const rasbus = require('rasbus');
@@ -22,9 +21,14 @@ Repler.addCommand({
   name: 'on',
   valid: state => state.tcs !== undefined,
   callback: state => {
-    return state.tcs.setProfile({ powerOn: true, active: true, wait: false }).then(() => {
-      console.log('on (power / active / no-wait)');
-    });
+    return state.tcs.setProfile({
+        powerOn: true,
+        active: true,
+        wait: false
+      })
+      .then(() => {
+        console.log('on (power / active / no-wait)');
+      });
   }
 });
 
@@ -57,7 +61,7 @@ Repler.addCommand({
       active: true,
       integrationTimeMs: 24,
       wait: true,
-      waitTimeMs: (2 * 1000),
+      waitTimeMs: 2 * 1000,
       multiplier: 4,
       filtering: 30,
       interrupts: true,

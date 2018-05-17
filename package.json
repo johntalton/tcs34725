@@ -7,20 +7,21 @@
     "lint": "./node_modules/.bin/eslint ."
   },
   "dependencies": {
-    "onoff": "^3.0.2",
-    "rasbus": "file:../rasbus"
+    "rasbus": "file:../rasbus",
+    "and-other-delights": "file:../and-other-delights"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/johntalton/tcs34725.git"
   },
-  "author": "",
+  "author": "johntalton@gmail.com",
   "license": "MIT",
   "devDependencies": {
     "color-convert": "^1.9.1",
     "eslint": "^4.19.1",
     "eslint-config-google": "^0.9.1",
     "mqtt": "^2.17.0",
+    "onoff": "^3.1.0",
     "repler": "file:../repler"
   }
 }

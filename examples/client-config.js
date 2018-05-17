@@ -19,11 +19,11 @@ class Config {
 
     if(s === undefined && ms === undefined) { return defaultMs; }
 
-    const s_z = s !== undefined ? s : 0;
-    const ms_z = ms !== undefined ? ms : 0;
+    const sz = s !== undefined ? s : 0;
+    const msz = ms !== undefined ? ms : 0;
 
-    const S = parseInt(s_z, 10);
-    const Ms = parseInt(ms_z, 10);
+    const S = parseInt(sz, BASE_10);
+    const Ms = parseInt(msz, BASE_10);
     if(Number.isNaN(S) || Number.isNaN(Ms)) { throw Error('NaN S or Ms value'); }
 
     return S * 1000 + Ms;
@@ -99,7 +99,6 @@ class Config {
 
     const pollIntervalMs = Config._getMs(rawPoll, 'pollInterval', 0);
     const flashMs = Config._getMs(rawPoll, 'flash', 2 * 1000, 0);
-    //const hasFlashTime = (rawPoll.flashMs !== undefined || rawPoll.flashS !== undefined);
 
     const status = rawPoll.status !== undefined ? rawPoll.status : true;
     const profile = rawPoll.profile !== undefined ? rawPoll.profile : true;
@@ -108,9 +107,9 @@ class Config {
     const knownM = [1, 4, 16, 60]; // todo move to sensor
     let cycleM = false;
     if(rawPoll.cycleMultiplier !== undefined) {
-      if(rawPoll.cycleMultiplier === true) { cycleM = knownM; }
-      //else if(rawPoll.cycleMultiplier === false) { cycleM = false; }
-      else if(!Array.isArray(rawPoll.cycleMultiplier)) {
+      if(rawPoll.cycleMultiplier === true) {
+        cycleM = knownM;
+      } else if(!Array.isArray(rawPoll.cycleMultiplier)) {
         throw Error('cycleMultiplier is not array | boolean');
       }
     }
@@ -129,12 +128,11 @@ class Config {
     if(rawStep === undefined) { return false; } // todo { disabled: true }
 
     // TODO
-    return rawStep
+    return rawStep;
   }
 
   static _normalizeProfile(rawProfile) {
-
-    //if(rawProfile.powerOn === undefined) {  }
+    // if(rawProfile.powerOn === undefined) {  }
 
     // TODO scheme from the lib?
     return rawProfile;

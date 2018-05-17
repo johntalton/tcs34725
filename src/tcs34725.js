@@ -7,6 +7,12 @@ const TCS34725_I2C_PART_NUMBER = 0x44; // TCS34721 and TCS34725
 // const TCS_I2C_PART_NUMBER = 0x4D // TCS34723 and TCS34727
 
 
+class Profile {
+  static validate(profile) {
+
+  }
+}
+
 /**
  *
  */
@@ -27,7 +33,9 @@ class Tcs34725 {
   status() { return Common._status(this.bus); }
 
   threshold() { return Common._threshold(this.bus); }
-  setThreshold(low, high) { return Common.threshold(this.bus, Converter.toThreshold(low, high)); }
+  setThreshold(low, high) {
+    return Common.threshold(this.bus, Converter.toThreshold(low, high));
+  }
 
   setProfile(profile) {
     if(profile.powerOn === undefined) { profile.powerOn = false; }
