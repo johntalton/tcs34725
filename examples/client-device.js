@@ -304,7 +304,13 @@ class Device {
 
   static setupLED(config) {
     if(config.led.disabled) { return; }
-    config.led.client = new Gpio(config.led.gpio, 'out');
+    try {
+      config.led.client = new Gpio(config.led.gpio, 'out');
+    }
+    catch(e) {
+      console.log('new Gpio caused excption - disable led', e.message);
+      config.led.disabled = true;
+    }
   }
 
   static ledOnWithDelay(config) {
@@ -342,7 +348,13 @@ class Device {
 
   static setupInterrupt(config) {
     if(config.interrupt.disabled) { return; }
-    config.interrupt.client = new Gpio(config.interrupt.gpio, 'in', 'rising', { activeLow: true });
+    try {
+      config.interrupt.client = new Gpio(config.interrupt.gpio, 'in', 'rising', { activeLow: true });
+    }
+    catch(e) {
+      console.log('new Gpio caused exception - disable hw interrupt', e.message);
+      config.interrupt.disabled = true;
+    }
   }
 
   static enableInterrupt(config) {
