@@ -1,14 +1,14 @@
 {
-  "name": "tcs34725",
+  "name": "@johntalton/tcs34725",
   "version": "1.0.0",
   "description": "",
-  "main": "color.js",
+  "main": "./src/tcs34725.js",
   "scripts": {
     "lint": "./node_modules/.bin/eslint ."
   },
   "dependencies": {
-    "rasbus": "file:../rasbus",
-    "and-other-delights": "file:../and-other-delights"
+    "rasbus": "johntalton/rasbus",
+    "and-other-delights": "johntalton/and-other-delights"
   },
   "repository": {
     "type": "git",
@@ -22,6 +22,6 @@
     "eslint-config-google": "^0.9.1",
     "mqtt": "^2.17.0",
     "onoff": "^3.1.0",
-    "repler": "file:../repler"
+    "repler": "johntalton/repler"
   }
 }
