@@ -1,5 +1,5 @@
 
-const { NameValueUtil } = require('and-other-delights');
+const { NameValueUtil } = require('@johntalton/and-other-delights');
 
 // TODO bellow are enum const and should be removed
 const AINT =   0b00010000;

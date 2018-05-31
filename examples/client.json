@@ -55,7 +55,7 @@
         "multiplier": 4
       },
 
-      "led": { "_driver": "mcp23", "gpio": "A7", "disabled": false },
+      "led": {  "gpio": 6, "disabled": true },
       "interrupt": { "gpio": 5, "disabled": true }
     }
   ]
