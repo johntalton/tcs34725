@@ -1,17 +1,9 @@
 
 const { Common, Converter } = require('./common.js');
 
-
 const TCS34725_I2C_ADDRESS = 0x29;
 const TCS34725_I2C_PART_NUMBER = 0x44; // TCS34721 and TCS34725
 // const TCS_I2C_PART_NUMBER = 0x4D // TCS34723 and TCS34727
-
-
-class Profile {
-  static validate(profile) {
-
-  }
-}
 
 /**
  *
@@ -74,6 +66,8 @@ class Tcs34725 {
 Tcs34725.CHIP_ID = TCS34725_I2C_PART_NUMBER;
 Tcs34725.ADDRESS = TCS34725_I2C_ADDRESS;
 
-module.exports.Tcs34725 = Tcs34725;
-module.exports.CHIP_ID = TCS34725_I2C_PART_NUMBER;
-module.exports.ADDRESS = TCS34725_I2C_ADDRESS;
+module.exports = {
+  Tcs34725: Tcs34725,
+  CHIP_ID: TCS34725_I2C_PART_NUMBER,
+  ADDRESS: TCS34725_I2C_ADDRESS
+};

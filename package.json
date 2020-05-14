@@ -1,27 +1,35 @@
 {
   "name": "@johntalton/tcs34725",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "",
+  "license": "MIT",
   "main": "./src/tcs34725.js",
   "scripts": {
     "lint": "./node_modules/.bin/eslint ."
   },
   "dependencies": {
-    "rasbus": "johntalton/rasbus#lastMultiplex",
-    "@johntalton/and-other-delights": "johntalton/and-other-delights"
+    "@johntalton/and-other-delights": "github:johntalton/and-other-delights"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/johntalton/tcs34725.git"
   },
   "author": "johntalton@gmail.com",
-  "license": "MIT",
   "devDependencies": {
-    "color-convert": "^1.9.1",
-    "eslint": "^4.19.1",
-    "eslint-config-google": "^0.9.1",
-    "mqtt": "^2.17.0",
-    "onoff": "^3.1.0",
-    "repler": "johntalton/repler"
+    "color-convert": "^2.0.1",
+    "eslint": "^7.0.0",
+    "eslint-plugin-fp": "^2.3.0",
+    "eslint-plugin-immutable": "^1.0.0",
+    "eslint-plugin-import": "^2.12.0",
+    "eslint-plugin-jsdoc": "^25.4.0",
+    "eslint-plugin-no-loops": "^0.3.0",
+    "eslint-plugin-no-use-extend-native": "^0.5.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-security": "^1.4.0",
+    "eslint-plugin-spellcheck": "0.0.16",
+    "i2c-bus": "^5.2.0",
+    "mqtt": "^4.0.1",
+    "onoff": "^6.0.0",
+    "repler": "github:johntalton/repler"
   }
 }

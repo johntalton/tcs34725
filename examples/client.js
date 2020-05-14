@@ -24,9 +24,13 @@ function configureStore(config) {
 }
 
 function dataHandler(config, device, data, result) {
-  const bgColor = '\x1b[' + (Convert.rgb.ansi16(data.rgb.r, data.rgb.g, data.rgb.b) + 10) + 'm';
+
+  const bgColor16 = '\x1b[' + (Convert.rgb.ansi16(data.rgb.r, data.rgb.g, data.rgb.b) + 10) + 'm';
   const resetColor = '\x1b[0m';
-  console.log('\t"' + device.name + '"', data.raw.c, 'rgb:', bgColor + JSON.stringify(data.rgb) + resetColor, 'lux:', Math.trunc(data.lux, 2));
+
+  const bgColor256 = '\u001b[48;5;' + Convert.rgb.ansi256([data.rgb.r, data.rgb.g, data.rgb.b]) + 'm';
+
+  console.log('\t"' + device.name + '"', data.raw.c, 'rgb:', bgColor256 + JSON.stringify(data.rgb) + resetColor, 'lux:', Math.trunc(data.lux, 2));
   // console.log(data);
   // console.log(result);
 

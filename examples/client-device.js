@@ -2,9 +2,9 @@
 const EventEmitter = require('events');
 
 const { Gpio } = require('onoff');
+const fivdi = require('i2c-bus');
 
-const rasbus = require('rasbus');
-
+const { I2CAddressedBus } = require('@johntalton/and-other-delights');
 const { Tcs34725 } = require('../src/tcs34725.js');
 
 class Device {
@@ -33,7 +33,10 @@ class Device {
     // console.log('setupDevice', config.name);
     if(config.emitter === undefined) { config.emitter = new EventEmitter(); }
 
-    return rasbus.byname(config.bus.driver).init(...config.bus.id)
+
+    return fivdi.openPromisified(config.bus.id[0], {})
+      .then(bus => new I2CAddressedBus(bus, config.bus.id[1]))
+    //return rasbus.byname(config.bus.driver).init(...config.bus.id)
       .then(bus => Tcs34725.init(bus))
       .then(tcs => Promise.all([Promise.resolve(tcs), tcs.id()]))
       .then(([tcs, id]) => {
@@ -114,6 +117,7 @@ class Device {
   static async watchInt(config, err, value) {
     // top level init watch must
     // await all promises and catch all errors
+    console.log('interupt ...');
 
     if(err) {
       console.log('gpio interrupt error', config.name, err);
@@ -349,6 +353,7 @@ class Device {
   static setupInterrupt(config) {
     if(config.interrupt.disabled) { return; }
     try {
+      console.log('setting up gpio interrupt');
       config.interrupt.client = new Gpio(config.interrupt.gpio, 'in', 'rising', { activeLow: true });
     }
     catch(e) {
@@ -365,10 +370,12 @@ class Device {
     if(config.interrupt.client === undefined) { throw Error('client not defined'); } // todo over agressiv checking
     config.interrupt.wcb = (err, value) => Device.watchInt(config, err, value);
     config.interrupt.client.watch(config.interrupt.wcb);
+    console.log('gpio interrupt enabled');
   }
 
   static disableInterrupt(config) {
     if(config.interrupt.disabled) { return; }
+    console.log('gpio interrupt disabled');
     config.interrupt.client.unwatch(config.interrupt.wcb);
     delete config.interrupt.wcb;
   }

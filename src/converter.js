@@ -1,7 +1,7 @@
 
 const { NameValueUtil } = require('@johntalton/and-other-delights');
 
-// TODO bellow are enum const and should be removed
+// TODO bellow are  const and should be removed
 const AINT =   0b00010000;
 const AVALID = 0b00000001;
 
@@ -66,7 +66,7 @@ const AIEN = 0x10;
  */
 class Converter {
   /**
-   * @param profile
+   *
    **/
   static formatProfile(enable, timing, wtiming, threshold, persistence, config, control, status) {
     // console.log('format profile', config.wlong, status);
@@ -137,7 +137,7 @@ class Converter {
       waitCount = Math.round(ms / (2.4 * 12));
     }
 
-    if(waitCount > 256) { throw new Error('millisecons out of range: ' + ms); }
+    if(waitCount > 256) { throw new Error('milliseconds out of range: ' + ms); }
     return [Converter.toWTimingCount(waitCount), assumedWlong];
   }
 
@@ -270,13 +270,22 @@ class Converter {
   static calculateRGB(raw) {
     if(raw.c <= 0) { return { r: 0, g: 0, b: 0, zero: true }; }
 
+    // software scaling?
+    // pow(raw.r / raw.c, scaling) * 255.0;
+    // clr.g = pow((float)raw_data.g / (float)raw_data.c, scaling) * 255.f;
+    // clr.b = pow((float)raw_data.b / (float)raw_data.c, scaling) * 255.f;
+
     const red = raw.r / raw.c;
     const green = raw.g / raw.c;
     const blue = raw.b / raw.c;
 
-    const r = Math.trunc(Math.pow(Math.trunc(red * 256) / 255, 2.5) * 255);
-    const g = Math.trunc(Math.pow(Math.trunc(green * 256) / 255, 2.5) * 255);
-    const b = Math.trunc(Math.pow(Math.trunc(blue * 256) / 255, 2.5) * 255);
+    //const r = Math.trunc(Math.pow(Math.trunc(red * 256) / 255, 2.5) * 255);
+    //const g = Math.trunc(Math.pow(Math.trunc(green * 256) / 255, 2.5) * 255);
+    //const b = Math.trunc(Math.pow(Math.trunc(blue * 256) / 255, 2.5) * 255);
+
+    const r = Math.trunc(red * 255);
+    const g = Math.trunc(green * 255);
+    const b = Math.trunc(blue * 255);
 
     return { r: r, g: g, b: b };
   }

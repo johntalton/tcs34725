@@ -35,24 +35,6 @@ const DATA_BLOCK_START_REGISTER = 0x14;
 const THRESHOLD_BLOCK_START_REGISTER = 0x04;
 // const PROFILE_BLOCK_START_REGISTER = 0x00;
 
-
-/**
- *
- **/
-class EnumUtil {
-  static enumToValue(ename, emap) {
-    const item = emap.find(({ name, value }) => name === ename);
-    if(item === undefined) { throw Error('name not found in map: ' + ename); }
-    return item.value;
-  }
-
-  static valueToEnum(evalue, emap) {
-    const item = emap.find(({ name, value }) => value === evalue);
-    if(item === undefined) { throw Error('value not found in map:' + evalue); }
-    return item.name;
-  }
-}
-
 /**
  *
  */
@@ -191,7 +173,7 @@ class Common {
   }
 
   static setProfile(bus, enable, timing, wtiming, threshold, persistence, config, control) {
-    // sets all independelntly, though, all maynot run in order
+    // sets all independently, though, all may not run in order
     return Promise.all([
       Common.timing(bus, timing),
       Common.wtiming(bus, wtiming),
@@ -204,13 +186,14 @@ class Common {
   }
 
   static clearInterrupt(bus) {
-    // console.log('clearning interupt');
+    // console.log('clearing interrupt');
     const cmd = (CMD_TYPE_SPECIAL << 5) | CMD_SPECIAL_CLEAR;
     return bus.writeSpecial(cmd | TCS34725_COMMAND_BIT);
   }
 
   static _dataBulk(bus) {
     return bus.read(DATA_BLOCK_START_REGISTER | TCS34725_COMMAND_BIT, 8).then(buffer => {
+      //console.log('rgbc buffer', buffer)
       const c = buffer.readUInt16LE(0);
       const r = buffer.readUInt16LE(2);
       const g = buffer.readUInt16LE(4);
@@ -227,5 +210,4 @@ class Common {
   }
 }
 
-module.exports.Common = Common;
-module.exports.Converter = Converter;
+module.exports ={ Common, Converter };

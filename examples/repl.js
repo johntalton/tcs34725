@@ -1,8 +1,9 @@
+const i2c = require('i2c-bus');
 
 const Repler = require('repler');
-const rasbus = require('rasbus');
+const { I2CAddressedBus } = require('@johntalton/and-other-delights');
 
-const { Tcs34725 } = require('../src/tcs34725.js');
+const { Tcs34725 } = require('..');
 
 Repler.addPrompt(state => 'tcs34725> ');
 
@@ -88,12 +89,25 @@ Repler.addCommand({
   valid: state => state.tcs === undefined,
   callback: state => {
     // const parts = state.line.trim().split(' ').slice(1);
-    return rasbus.byname('i2c-bus').init(1, 0x29).then(bus => {
-      return Tcs34725.init(bus).then(tcs => {
-        state.tcs = tcs;
-      });
+    const busNumber = 1;
+    const busAddress = 0x29;
+
+    return i2c.openPromisified(busNumber)
+      .then(bus => new I2CAddressedBus(bus, busAddress))
+      .then(bus => Tcs34725.init(bus))
+      .then(tcs => { state.tcs = tcs; });
+  }
+});
+
+Repler.addCommand({
+  name: 'data',
+  valid: state => state.tcs !== undefined,
+  callback: state => {
+    return state.tcs.data().then(data => {
+      console.log(data);
     });
   }
 });
+
 
 Repler.go({ autologoutMs: 10 * 1000 });
