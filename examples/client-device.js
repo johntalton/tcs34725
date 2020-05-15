@@ -1,12 +1,16 @@
 
 const EventEmitter = require('events');
+const promiseDelayMs = require('util').promisify(setTimeout);
 
 const { Gpio } = require('onoff');
 const fivdi = require('i2c-bus');
 
 const { I2CAddressedBus } = require('@johntalton/and-other-delights');
-const { Tcs34725 } = require('../src/tcs34725.js');
+const { Tcs34725 } = require('..');
 
+/**
+ * A set of static methods to manage the workflow of Device setup and flow.
+ **/
 class Device {
   // @public
   static on(config, event, cb) {
@@ -14,9 +18,11 @@ class Device {
   }
 
   /**
-   * Attempt initial device setup, start retry if needed failure.
-   *  (setup failurs are supprsed by retry, and thus promis alwasy resolves)
-   * @return promise the resolves one the process starts.
+   * Attempt initial device setup, start retry if needed
+   * (setup failures are suppressed by retry, and thus promise always resolves).
+   * 
+   * @param config A configuration json for the device.
+   * @returns Promise that resolve after device start, or on retry timer setup.
    **/
   // @public
   static setupDeviceWithRetry(config) {
@@ -36,11 +42,10 @@ class Device {
 
     return fivdi.openPromisified(config.bus.id[0], {})
       .then(bus => new I2CAddressedBus(bus, config.bus.id[1]))
-    //return rasbus.byname(config.bus.driver).init(...config.bus.id)
       .then(bus => Tcs34725.init(bus))
       .then(tcs => Promise.all([Promise.resolve(tcs), tcs.id()]))
       .then(([tcs, id]) => {
-        if(id !== Tcs34725.CHIP_ID) { throw Error('invalid/unknonw chip id: ' + id); }
+        if(id !== Tcs34725.CHIP_ID) { throw Error('invalid/unknown chip id: ' + id); }
 
         Device.setupLED(config);
         Device.setupInterrupt(config);
@@ -52,26 +57,27 @@ class Device {
           console.log('flash enabled but led is disabled or missing');
         }
         if(config.interrupt.disabled && config.step !== false) {
-          console.log('stepper enabled but interrupt diabled or missing');
+          console.log('stepper enabled but interrupt disabled or missing');
         }
+        return true;
       });
   }
 
   static configureDevice(config) {
     // console.log('setting profile', config.name);
-    // TODO disable profile on setup if previously configured, or if trueded state
+    // TODO disable profile on setup if previously configured, or trusted state
     return config.client.setProfile(config.profile).then(() => {
       if(config.clearIntOnStart) {
         console.log('Device clearing interrupt on start', config.name);
         return config.client.clearInterrupt();
       }
 
-      return Promise.resolve();
+      return true;
     });
   }
 
   static async retrySetupInterval(config) {
-    // top level interval callbak must await all promises
+    // top level interval callback must await all promises
     // and catch all errors
 
     // console.log('retry setup');
@@ -115,9 +121,9 @@ class Device {
   }
 
   static async watchInt(config, err, value) {
-    // top level init watch must
+    // top level interrupt watch must
     // await all promises and catch all errors
-    console.log('interupt ...');
+    console.log('interrupt ...');
 
     if(err) {
       console.log('gpio interrupt error', config.name, err);
@@ -138,38 +144,39 @@ class Device {
       });
   }
 
+  static directionForDataThreshold(rawC, threshold) {
+    if(rawC > threshold.high) { return 1; }
+    if(rawC < threshold.low) { return -1; }
+    return 0;
+  }
+
   static handleThreshold(config, threshold, data) {
-    let direction = 0;
-    if(data.raw.c > threshold.high) {
-      direction = +1;
-    } else if(data.raw.c < threshold.low) {
-      direction = -1;
-    } else { direction = 0; }
+    const direction = Device.directionForDataThreshold(data.raw.c, threshold);
 
     // console.log('reconfigure thresholds', config.name, data.raw.c, threshold, direction);
 
     let first = Promise.resolve();
     let newt = threshold;
     if(direction !== 0) {
-      // this is the working range, not the configrued range
+      // this is the working range, not the configured range
       // this allows the system to continue working as expected
-      // even when the profile is being configured externaly.
+      // even when the profile is being configured externally.
       const range = threshold.high - threshold.low;
 
       if(config.step.jump) {
         const step = Math.trunc(range / 2);
-        // todo, this should actaully follow the step sizes
+        // todo, this should actually follow the step sizes
         // that the existing auto step bellow uses.  this current
-        // impl is more of a 'center' around using existing range
+        // code is more of a 'center' around using existing range
         // which is a bit odd.  But the goal is to not have to walk
         // the entire threshold steps then this is a solution
         newt = { low: data.raw.c - step, high: data.raw.c + step, touched: true };
       } else {
-        // standard mode is to walk the theshold steps
-        // in the direction of our target. Can be usefull
+        // standard mode is to walk the threshold steps
+        // in the direction of our target. Can be useful
         // for clients that expect all ranges traversed
         // (some client that have longer running times
-        // - like day cycles - may not have been programed
+        // - like day cycles - may not have been programmed
         // to expect "jumps" in the ranges and thus this
         // compensates for that)
         const step = direction * Math.trunc(range / 2);
@@ -178,12 +185,12 @@ class Device {
         newt = { low: low, high: high, touched: true };
       }
 
-      // should be handled by above algos in smarter way, good safety
+      // should be handled by above logic in smarter way, good safety
       if(newt.low < 0) { newt.low = 0; }
       if(newt.high < 0) { newt.low = 0; }
       if(newt.high > 0xFFFF) { newt.low = 0xFFFF; } // todo max thresh value
 
-      // make fisrt our set call
+      // make first our set call
       first = config.client.setThreshold(newt.low, newt.high);
     } else {
       console.log('direction Zero, odd as this is interrupt driven, quick mover?');
@@ -197,7 +204,7 @@ class Device {
   }
 
   static pollDeviceInfo(config) {
-    // if nothing enbabled, just return
+    // if nothing enabled, just return
     if(config.poll.status === false && config.poll.profile === false) {
       return Promise.resolve({});
     }
@@ -226,7 +233,7 @@ class Device {
       if(result.thresholdViolation === true) {
         //
         if(result.threshold === undefined) {
-          return Promise.reject(Error('software interrupt skipped, no thresholdr'));
+          return Promise.reject(Error('software interrupt skipped, no threshold'));
         }
         if(data === undefined) {
           return Promise.reject(Error('software interrupt skipped, no data'));
@@ -269,7 +276,7 @@ class Device {
   }
 
   static async poll(config) {
-    // top level of poll function is syncrounous, and catches all errors
+    // top level of poll function is synchronous, and catches all errors
 
     // first, get any info before we read data, if configured
     await Device.pollDeviceInfo(config)
@@ -292,7 +299,7 @@ class Device {
         const skipData = config.poll.skipData &&
           ((!swInterruptEnabled) || (swInterruptEnabled && !result.thresholdViolation));
 
-        if(skipData) { console.log('skip'); return Promise.resolve(); }
+        if(skipData) { console.log('skip'); return true; }
 
         // do that glorious data read
         return Device.ledOnWithDelay(config)
@@ -310,9 +317,8 @@ class Device {
     if(config.led.disabled) { return; }
     try {
       config.led.client = new Gpio(config.led.gpio, 'out');
-    }
-    catch(e) {
-      console.log('new Gpio caused excption - disable led', e.message);
+    } catch (e) {
+      console.log('new Gpio caused exception - disable led', e.message);
       config.led.disabled = true;
     }
   }
@@ -324,28 +330,17 @@ class Device {
 
     // todo suppress interrupt if desired by config during flash
 
-    return new Promise((resolve, reject) => {
-      config.led.client.write(1, err => {
-        if(err) { reject(err); }
-        config.led.flashtimer = setTimeout(() => {
-          resolve();
-        }, config.poll.flashMs);
-      });
-    });
+    return config.led.client.write(1)
+      .then(() => promiseDelayMs(config.poll.flashMs));
   }
 
   static ledOff(config) {
     if(config.led.disabled) { return Promise.resolve(); }
     if(config.poll.flashMs === 0) { return Promise.resolve(); }
 
-    // todo reenable interrupt if disabled during flash
+    // todo re-enable interrupt if disabled during flash
 
-    return new Promise((resolve, reject) => {
-      config.led.client.write(0, err => {
-        if(err) { reject(err); }
-        resolve();
-      });
-    });
+    return config.led.client.write(0);
   }
 
   // --------------------------------------------------------------------------
@@ -355,29 +350,28 @@ class Device {
     try {
       console.log('setting up gpio interrupt');
       config.interrupt.client = new Gpio(config.interrupt.gpio, 'in', 'rising', { activeLow: true });
-    }
-    catch(e) {
+    } catch (e) {
       console.log('new Gpio caused exception - disable hw interrupt', e.message);
       config.interrupt.disabled = true;
     }
   }
 
   static enableInterrupt(config) {
-    // todo rename? as this is a full setup/teardown for each enable/disable and not for pauseing
-    //   as this causes a full cleanup of the underlining client. pause should be in the actaull handler?
+    // todo rename? as this is a full setup/teardown for each enable/disable and not for pausing
+    //   as this causes a full cleanup of the underlining client. pause should be in the actual handler?
 
     if(config.interrupt.disabled) { return; }
-    if(config.interrupt.client === undefined) { throw Error('client not defined'); } // todo over agressiv checking
+    if(config.interrupt.client === undefined) { throw Error('client not defined'); } // todo over aggressive checking
     config.interrupt.wcb = (err, value) => Device.watchInt(config, err, value);
-    config.interrupt.client.watch(config.interrupt.wcb);
+    config.interrupt.client.watch(config.interrupt.wcb); // eslint-disable-line fp/no-mutating-methods
     console.log('gpio interrupt enabled');
   }
 
   static disableInterrupt(config) {
     if(config.interrupt.disabled) { return; }
     console.log('gpio interrupt disabled');
-    config.interrupt.client.unwatch(config.interrupt.wcb);
-    delete config.interrupt.wcb;
+    config.interrupt.client.unwatch(config.interrupt.wcb); // eslint-disable-line fp/no-mutating-methods
+    config.interrupt.wcb = undefined;
   }
 }
 

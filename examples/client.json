@@ -39,6 +39,7 @@
       "_flashOnWake": 3,
 
       "profile": {
+        "$schema": "urn:johntalton/tcs34725/profile",
         "powerOn": true,
         "active": true,
         "integrationTimeMs": 150,

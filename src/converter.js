@@ -66,16 +66,23 @@ const AIEN = 0x10;
  */
 class Converter {
   /**
-   *
+   * @param enable An object with PON, AEN, AIEN and WEN property.
+   * @param timing A value representing integration time.
+   * @param wTiming A scalar value associated with the `config.wLong` setting.
+   * @param threshold An object with `high` and `low` properties.
+   * @param persistence Value for persistence.
+   * @param config An object with `wLong` property.
+   * @param control Gain value.
+   * @param status An object with `aValid and `aInt` properties.
+   * @returns A friendly named - formatted -  object to use at a high level.
    **/
-  static formatProfile(enable, timing, wtiming, threshold, persistence, config, control, status) {
-    // console.log('format profile', config.wlong, status);
+  static formatProfile(enable, timing, wTiming, threshold, persistence, config, control, status) {
     return {
       powerOn: enable.PON,
       active: enable.AEN,
       interrupts: enable.AIEN,
       wait: enable.WEN,
-      waitTime: Converter.formatWTiming(wtiming, config.wlong),
+      waitTime: Converter.formatWTiming(wTiming, config.wlong),
       integrationTime: Converter.formatTiming(timing),
       threshold: { low: threshold.low, high: threshold.high },
       filtering: Converter.formatPersistence(persistence),
@@ -86,35 +93,17 @@ class Converter {
     };
   }
 
-  static toEnable(enable) {
-    return (enable.AIEN ? AIEN : 0) |
-           (enable.WEN ? WEN : 0) |
-           (enable.AEN ? AEN : 0) |
-           (enable.PON ? PON : 0);
-  }
-
-  static parseEnable(buffer) {
-    const value = buffer.readInt8(0);
-
+  static formatWTiming(wtiming, wlong) {
+    const waitCount = 256 - wtiming.wtime;
+    const ms = waitCount * 2.4 * (wlong ? 12 : 1);
     return {
-      AIEN: (value & AIEN) === AIEN,
-      WEN: (value & WEN) === WEN,
-      AEN: (value & AEN) === AEN,
-      PON: (value & PON) === PON
+      wtime: wtiming.wtime,
+      wlong: wlong,
+      waitCount: waitCount,
+      milliseconds: ms
     };
   }
-
-  static toTimingMs(ms) {
-    const count = Math.floor(ms / 2.4);
-    if(count > 256) { throw new Error('timing ms out of range: ' + ms); }
-    return 256 - count;
-  }
-
-  static parseTiming(buffer) {
-    const value = buffer.readInt8(0);
-    return { atime: value };
-  }
-
+  
   static formatTiming(timing) {
     const integCycles = 256 - timing.atime;
     const maxCount = integCycles * 1024;
@@ -127,12 +116,102 @@ class Converter {
     };
   }
 
+  static formatPersistence(persistence) {
+    return NameValueUtil.toName(persistence.apres, APRES_ENUM_MAP);
+  }
+
+  static formatControl(control) {
+    let multiplier;
+    switch(control.again) {
+    case GAIN_X1: multiplier = 1; break;
+    case GAIN_X4: multiplier = 4; break;
+    case GAIN_X16: multiplier = 16; break;
+    case GAIN_X60: multiplier = 60; break;
+    default: throw Error('unknown control: ' + control);
+    }
+
+    return { again: control.again, multiplier: multiplier };
+  }
+
+  // ---------------------------------------------------------------------------
+
+  static parseEnable(buffer) {
+    const value = buffer.readInt8(0);
+
+    return {
+      AIEN: (value & AIEN) === AIEN,
+      WEN: (value & WEN) === WEN,
+      AEN: (value & AEN) === AEN,
+      PON: (value & PON) === PON
+    };
+  }
+
+  static parseWTiming(buffer) {
+    const value = buffer.readInt8(0);
+    return { wtime: value };
+  }
+
+  static parseTiming(buffer) {
+    const value = buffer.readInt8(0);
+    return { atime: value };
+  }
+
+
+  static parseThreshold(buffer) {
+    const low = buffer.readUInt16LE(0);
+    const high = buffer.readUInt16LE(2);
+    return {
+      low: low,
+      high: high
+    };
+  }
+
+  static parsePersistence(buffer) {
+    const value = buffer[0] & APRES;
+    return { apres: value };
+  }
+
+  static parseConfiguration(buffer) {
+    const value = buffer.readInt8(0);
+    return { wlong: (value & WLONG) === WLONG };
+  }
+
+
+  static parseStatus(buffer) {
+    const value = buffer.readInt8(0);
+    return {
+      aint: (value & AINT) === AINT,
+      avalid: (value & AVALID) === AVALID
+    };
+  }
+
+  static parseControl(buffer) {
+    const value = buffer.readInt8(0);
+    const again = value & AGAIN;
+    return { again: again };
+  }
+
+  // ---------------------------------------------------------------------------
+
+  static toEnable(enable) {
+    return (enable.AIEN ? AIEN : 0) |
+           (enable.WEN ? WEN : 0) |
+           (enable.AEN ? AEN : 0) |
+           (enable.PON ? PON : 0);
+  }
+
+  static toTimingMs(ms) {
+    const count = Math.floor(ms / 2.4);
+    if(count > 256) { throw new Error('timing ms out of range: ' + ms); }
+    return 256 - count;
+  }
+
   static toWTimingMs(ms) {
     let assumedWlong = false;
     let waitCount = Math.round(ms / 2.4);
 
     if(ms > 256) {
-      // assume wlong true desired
+      // assume wLong true desired
       assumedWlong = true;
       waitCount = Math.round(ms / (2.4 * 12));
     }
@@ -146,22 +225,7 @@ class Converter {
     return 256 - count;
   }
 
-  static parseWTiming(buffer) {
-    const value = buffer.readInt8(0);
-    return { wtime: value };
-  }
-
-  static formatWTiming(wtiming, wlong) {
-    const waitCount = 256 - wtiming.wtime;
-    const ms = waitCount * 2.4 * (wlong ? 12 : 1);
-    return {
-      wtime: wtiming.wtime,
-      wlong: wlong,
-      waitCount: waitCount,
-      milliseconds: ms
-    };
-  }
-
+  
   static toThreshold(low, high) {
     return [
       low & 0xFF, low >> 8 & 0xFF,
@@ -169,41 +233,12 @@ class Converter {
    ];
   }
 
-  static parseThreshold(buffer) {
-    const low = buffer.readUInt16LE(0);
-    const high = buffer.readUInt16LE(2);
-    return {
-      low: low,
-      high: high
-    };
-  }
-
   static toPersistence(persistence) {
-    const item = APRES_ENUM_MAP.find(({ name, value }) => name === persistence);
-    if(item === undefined) { throw Error('unknown persistence: ' + persistence); }
-    return item.value;
+     return NameValueUtil.toValue(persistence, APRES_ENUM_MAP);
  }
-
-  static parsePersistence(buffer) {
-    const value = buffer[0] & APRES;
-    return { apres: value };
-  }
-
-  static formatPersistence(persistence) {
-    return NameValueUtil.toName(persistence.apres, APRES_ENUM_MAP);
-
-    // const item = APRES_ENUM_MAP.find(({ name, value }) => value === persistence);
-    // if(item === undefined) { throw Error('unknown persistence:' + persistence); }
-    // return { apres: persistence.apres, persist: item.name };
-  }
 
   static toConfiguration(wlong) {
     return wlong ? WLONG : 0;
-  }
-
-  static parseConfiguration(buffer) {
-    const value = buffer.readInt8(0);
-    return { wlong: (value & WLONG) === WLONG };
   }
 
   static toControl(multiplier) {
@@ -220,32 +255,7 @@ class Converter {
     return again;
   }
 
-  static parseControl(buffer) {
-    const value = buffer.readInt8(0);
-    const again = value & AGAIN;
-    return { again: again };
-  }
-
-  static formatControl(control) {
-    let multiplier;
-    switch(control.again) {
-    case GAIN_X1: multiplier = 1; break;
-    case GAIN_X4: multiplier = 4; break;
-    case GAIN_X16: multiplier = 16; break;
-    case GAIN_X60: multiplier = 60; break;
-    default: throw Error('unknown control: ' + control);
-    }
-
-    return { again: control.again, multiplier: multiplier };
-  }
-
-  static parseStatus(buffer) {
-    const value = buffer.readInt8(0);
-    return {
-      aint: (value & AINT) === AINT,
-      avalid: (value & AVALID) === AVALID
-    };
-  }
+  // ---------------------------------------------------------------------------
 
   static formatData(data) {
     const lt = Converter.calculateLuxAndTempature(data);
@@ -271,9 +281,9 @@ class Converter {
     if(raw.c <= 0) { return { r: 0, g: 0, b: 0, zero: true }; }
 
     // software scaling?
-    // pow(raw.r / raw.c, scaling) * 255.0;
-    // clr.g = pow((float)raw_data.g / (float)raw_data.c, scaling) * 255.f;
-    // clr.b = pow((float)raw_data.b / (float)raw_data.c, scaling) * 255.f;
+    // r = pow(raw.r / raw.c, scaling) * 255.0;
+    // g = pow(raw.g / raw.c, scaling) * 255.0;
+    // b = pow(raw.b / raw.c, scaling) * 255.0;
 
     const red = raw.r / raw.c;
     const green = raw.g / raw.c;

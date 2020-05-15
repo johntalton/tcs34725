@@ -250,11 +250,8 @@
     "fp/no-throw": "warn",
     "fp/no-unused-expression": "warn",
     "fp/no-valueof-field": "error",
-    "no-var": "error",
-
 
     "no-use-extend-native/no-use-extend-native": "error",
-
 
     "jsdoc/check-param-names": "error",
     "jsdoc/check-tag-names": "error",
@@ -282,7 +279,8 @@
         "todo", "const", "eslint", "bitwise",
         "param",
         "aosong", "asair", "adafruit",
-        "crc", "util", "modbus", "ammodbus", "ammodbusdefs"
+        "crc", "util", "modbus", "ammodbus", "ammodbusdefs",
+        "rgb", "gpio", "onoff", "lux"
       ]
     }]
 
