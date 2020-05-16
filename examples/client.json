@@ -16,7 +16,7 @@
       "retryIntervalS": 13,
 
       "poll": {
-        "pollIntervalS": 120,
+        "pollIntervalS": 10,
         "flash": true,
         "status": true,
         "profile": true,
@@ -47,13 +47,13 @@
         "interrupts": true,
         "filtering": 1,
 
-        "high": 100,
+        "high": 200,
         "low": 0,
 
         "wait": true,
         "waitTimeS": 7,
 
-        "multiplier": 16
+        "multiplier": 60
       },
 
       "led": {  "gpio": 16, "disabled": true },
