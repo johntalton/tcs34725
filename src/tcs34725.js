@@ -1,9 +1,10 @@
 
-const { Common, Converter } = require('./common.js');
-
-const TCS34725_I2C_ADDRESS = 0x29;
-const TCS34725_I2C_PART_NUMBER = 0x44; // TCS34721 and TCS34725
-// const TCS_I2C_PART_NUMBER = 0x4D // TCS34723 and TCS34727
+const { Common } = require('./common.js');
+const { Converter } = require('./converter.js');
+const {
+  TCS34725_I2C_PART_NUMBER,
+  TCS34725_I2C_ADDRESS
+} = require('./defs.js');
 
 /**
  *
@@ -62,12 +63,9 @@ class Tcs34725 {
   data() { return Common.data(this.bus); }
 }
 
-// just shorthand
-Tcs34725.CHIP_ID = TCS34725_I2C_PART_NUMBER;
-Tcs34725.ADDRESS = TCS34725_I2C_ADDRESS;
-
 module.exports = {
   Tcs34725: Tcs34725,
+  Converter: Converter,
   CHIP_ID: TCS34725_I2C_PART_NUMBER,
   ADDRESS: TCS34725_I2C_ADDRESS
 };

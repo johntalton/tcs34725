@@ -1,0 +1,26 @@
+{
+    "$id": "urn:johntalton/tcs34725/profile",
+    "$schema": "https://json-schema.org/draft/2019-09/schema",
+    "title": "Profile",
+    "type": "object",
+    "properties": {
+      "powerOn": {
+        "type": "boolean",
+        "description": "Enavble Power on Device.",
+        "default": false
+      },
+      "active": {},
+      "integrationTimeMs": {},
+
+      "interrupts": {},
+      "filtering": {},
+
+      "high": {},
+      "low": {},
+
+      "wait": {},
+      "wiatTimeS": {},
+
+      "multiplier": {}
+    }
+  }

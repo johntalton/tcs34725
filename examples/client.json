@@ -1,4 +1,5 @@
 {
+  "$schema": "urn:johntalton/tcs34725/client",
   "mqtt": { "reconnectS": 5 },
   "devices": [
     {
