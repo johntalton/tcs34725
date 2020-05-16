@@ -1,140 +1,110 @@
 
 const { Converter } = require('./converter.js');
-
-const TCS34725_COMMAND_BIT = 0x80;
-
-const CMD_TYPE_SPECIAL = 0b11;
-const CMD_SPECIAL_CLEAR = 0b00110;
-
-const ENABLE_REGISTER  = 0x00;
-const ATIME_REGISTER   = 0x01;
-const WTIME_REGISTER   = 0x03;
-const AILTL_REGISTER   = 0x04;
-const AILTH_REGISTER   = 0x05;
-const AIHTL_REGISTER   = 0x06;
-const AIHTH_REGISTER   = 0x07;
-const PERS_REGISTER    = 0x0C;
-const CONFIG_REGISTER  = 0x0D;
-const CONTROL_REGISTER = 0x0F;
-const ID_REGISTER      = 0x12;
-const STATUS_REGISTER  = 0x13;
-
-/*
- We use data block bellow instead
-const CDATAL_REGISTER  = 0x14;
-const CDATAH_REGISTER  = 0x15;
-const RDATAL_REGISTER  = 0x16;
-const RDATAH_REGISTER  = 0x17;
-const GDATAL_REGISTER  = 0x18;
-const GDATAH_REGISTER  = 0x19;
-const BDATAL_REGISTER  = 0x1A;
-const BDATAH_REGISTER  = 0x1B;
-*/
-
-const DATA_BLOCK_START_REGISTER = 0x14;
-const THRESHOLD_BLOCK_START_REGISTER = 0x04;
-// const PROFILE_BLOCK_START_REGISTER = 0x00;
+const {
+  Registers,
+  makeCommand,
+  COMMAND_CLEAR, COMMAND_BULK_DATA, COMMAND_BULK_PROFILE
+ } = require('./defs.js');
 
 /**
  *
  */
 class Common {
   static _id(bus) {
-    return bus.read(ID_REGISTER | TCS34725_COMMAND_BIT, 1).then(buffer => {
+    return bus.read(makeCommand(Registers.ID), 1).then(buffer => {
       const id = buffer.readUInt8(0);
       return id;
     });
   }
 
   static _enable(bus) {
-    return bus.read(ENABLE_REGISTER | TCS34725_COMMAND_BIT, 1).then(buffer => {
+    return bus.read(makeCommand(Registers.ENABLE), 1).then(buffer => {
       return Converter.parseEnable(buffer);
     });
   }
 
   static enable(bus, enable) {
-    return bus.write(ENABLE_REGISTER | TCS34725_COMMAND_BIT, enable);
+    return bus.write(makeCommand(Registers.ENABLE), enable);
   }
 
 
   static _timing(bus) {
-    return bus.read(ATIME_REGISTER | TCS34725_COMMAND_BIT, 1).then(buffer => {
+    return bus.read(makeCommand(Registers.ATIME), 1).then(buffer => {
       return Converter.parseTiming(buffer);
     });
   }
 
   static timing(bus, timing) {
-    return bus.write(ATIME_REGISTER | TCS34725_COMMAND_BIT, timing);
+    return bus.write(makeCommand(Registers.ATIME), timing);
   }
 
   static _wtiming(bus) {
-    return bus.read(WTIME_REGISTER | TCS34725_COMMAND_BIT, 1).then(buffer => {
+    return bus.read(makeCommand(Registers.WTIME), 1).then(buffer => {
       return Converter.parseWTiming(buffer);
     });
   }
 
   static wtiming(bus, wtiming) {
-    return bus.write(WTIME_REGISTER | TCS34725_COMMAND_BIT, wtiming);
+    return bus.write(makeCommand(Registers.WTIME), wtiming);
   }
 
   static _threshold(bus) {
-    return bus.read(THRESHOLD_BLOCK_START_REGISTER | TCS34725_COMMAND_BIT, 4).then(buffer => {
+    return bus.read(makeCommand(Registers.THRESHOLD_BLOCK_START), 4).then(buffer => {
       return Converter.parseThreshold(buffer);
     });
   }
 
   static thresholdBulk(bus, threshold) {
-    return bus.write(THRESHOLD_BLOCK_START_REGISTER | TCS34725_COMMAND_BIT, threshold);
+    return bus.write(makeCommand(Registers.THRESHOLD_BLOCK_START), threshold);
   }
 
   static threshold(bus, threshold) {
     return Promise.all([
-      bus.write(AILTL_REGISTER | TCS34725_COMMAND_BIT, threshold[0]),
-      bus.write(AILTH_REGISTER | TCS34725_COMMAND_BIT, threshold[1]),
-      bus.write(AIHTL_REGISTER | TCS34725_COMMAND_BIT, threshold[2]),
-      bus.write(AIHTH_REGISTER | TCS34725_COMMAND_BIT, threshold[3])
+      bus.write(makeCommand(Registers.AILTL), threshold[0]),
+      bus.write(makeCommand(Registers.AILTH), threshold[1]),
+      bus.write(makeCommand(Registers.AIHTL), threshold[2]),
+      bus.write(makeCommand(Registers.AIHTH), threshold[3])
     ]);
   }
 
   static _persistence(bus) {
-    return bus.read(PERS_REGISTER | TCS34725_COMMAND_BIT, 1).then(buffer => {
+    return bus.read(makeCommand(Registers.PERS), 1).then(buffer => {
       return Converter.parsePersistence(buffer);
     });
   }
 
   static persistence(bus, persistence) {
-    return bus.write(PERS_REGISTER | TCS34725_COMMAND_BIT, persistence);
+    return bus.write(makeCommand(Registers.PERS), persistence);
   }
 
   static _config(bus) {
-    return bus.read(CONFIG_REGISTER | TCS34725_COMMAND_BIT, 1).then(buffer => {
+    return bus.read(makeCommand(Registers.CONFIG), 1).then(buffer => {
       return Converter.parseConfiguration(buffer);
     });
   }
 
   static config(bus, config) {
-    return bus.write(CONFIG_REGISTER | TCS34725_COMMAND_BIT, config);
+    return bus.write(makeCommand(Registers.CONFIG), config);
   }
 
   static _control(bus) {
-    return bus.read(CONTROL_REGISTER | TCS34725_COMMAND_BIT, 1).then(buffer => {
+    return bus.read(makeCommand(Registers.CONTROL), 1).then(buffer => {
       return Converter.parseControl(buffer);
     });
   }
 
   static control(bus, control) {
-    return bus.write(CONTROL_REGISTER | TCS34725_COMMAND_BIT, control);
+    return bus.write(makeCommand(Registers.CONTROL), control);
   }
 
   static _status(bus) {
-    return bus.read(STATUS_REGISTER | TCS34725_COMMAND_BIT, 1).then(buffer => {
+    return bus.read(makeCommand(Registers.STATUS), 1).then(buffer => {
       return Converter.parseStatus(buffer);
     });
   }
 
-  /*
   static _profileBulk(bus) {
-    return bus.read(PROFILE_BLOCK_START_REGISTER | TCS34725_COMMAND_BIT, 20).then(buffer => {
+    return bus.read(COMMAND_BULK_PROFILE, 20).then(buffer => {
       // console.log(buffer);
 
       const enable = Converter.parseEnable(buffer.readUInt8(0));
@@ -150,7 +120,6 @@ class Common {
       return [enable, timing, wtiming, threshold, persistence, config, control, status];
     });
   }
-  */
 
   static _rawProfile(bus) {
     return Promise.all([
@@ -166,7 +135,8 @@ class Common {
   }
 
   static _profile(bus) {
-    return Common._rawProfile(bus).then(parts => {
+    return Common._profileBulk(bus).then(parts => {
+    // return Common._rawProfile(bus).then(parts => {
       const [enable, timing, wtiming, threshold, persistence, config, control, status] = parts;
       return Converter.formatProfile(enable, timing, wtiming, threshold, persistence, config, control, status);
     });
@@ -187,13 +157,11 @@ class Common {
 
   static clearInterrupt(bus) {
     // console.log('clearing interrupt');
-    const cmd = (CMD_TYPE_SPECIAL << 5) | CMD_SPECIAL_CLEAR;
-    return bus.writeSpecial(cmd | TCS34725_COMMAND_BIT);
+    return bus.writeSpecial(COMMAND_CLEAR);
   }
 
   static _dataBulk(bus) {
-    return bus.read(DATA_BLOCK_START_REGISTER | TCS34725_COMMAND_BIT, 8).then(buffer => {
-      //console.log('rgbc buffer', buffer)
+    return bus.read(COMMAND_BULK_DATA, 8).then(buffer => {
       const c = buffer.readUInt16LE(0);
       const r = buffer.readUInt16LE(2);
       const g = buffer.readUInt16LE(4);
@@ -210,4 +178,4 @@ class Common {
   }
 }
 
-module.exports ={ Common, Converter };
+module.exports = { Common, Converter };

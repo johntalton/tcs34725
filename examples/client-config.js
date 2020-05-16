@@ -1,5 +1,5 @@
 
-const fs = require('fs');
+const fs = require('fs').promises;
 
 const BASE_10 = 10;
 
@@ -7,8 +7,6 @@ const BASE_10 = 10;
  *
  **/
 class Config {
-  // static _getBool(cfg, name, defaultBool) {}
-
   static _getMs(cfg, name, defaultMs, altDefaultMs) {
     if(cfg[name] !== undefined) {
       return cfg[name] ? defaultMs : altDefaultMs;
@@ -30,12 +28,9 @@ class Config {
   }
 
   static config(path) {
-    return new Promise((resolve, reject) => {
-      fs.readFile(path, (err, data) => {
-        if(err) { reject(err); return; }
-        resolve(JSON.parse(data));
-      });
-    }).then(Config._normalize);
+    return fs.readFile(path)
+      .then(JSON.parse)
+      .then(Config._normalize);
   }
 
   static _normalize(rawCfg) {

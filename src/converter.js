@@ -1,65 +1,7 @@
 
 const { NameValueUtil } = require('@johntalton/and-other-delights');
 
-// TODO bellow are  const and should be removed
-const AINT =   0b00010000;
-const AVALID = 0b00000001;
-
-const WLONG = 0b00000010;
-
-
-const AGAIN = 0b00000011;
-const GAIN_X1 =  0b00;
-const GAIN_X4 =  0b01;
-const GAIN_X16 = 0b10;
-const GAIN_X60 = 0b11;
-
-
-const APRES = 0b00001111;
-
-const APRES_EVERY = 0b0000;
-const APRES_1     = 0b0001;
-const APRES_2     = 0b0010;
-const APRES_3     = 0b0011;
-const APRES_5     = 0b0100;
-const APRES_10    = 0b0101;
-const APRES_15    = 0b0110;
-const APRES_20    = 0b0111;
-const APRES_25    = 0b1000;
-const APRES_30    = 0b1001;
-const APRES_35    = 0b1010;
-const APRES_40    = 0b1011;
-const APRES_45    = 0b1100;
-const APRES_50    = 0b1101;
-const APRES_55    = 0b1110;
-const APRES_60    = 0b1111;
-
-const APRES_ENUM_MAP = [
-  { name: true, value: APRES_EVERY },
-  { name: false, value: APRES_EVERY },
-  { name: 0, value: APRES_EVERY },
-  { name: 1, value: APRES_1 },
-  { name: 2, value: APRES_2 },
-  { name: 3, value: APRES_3 },
-  { name: 5, value: APRES_5 },
-  { name: 10, value: APRES_10 },
-  { name: 15, value: APRES_15 },
-  { name: 20, value: APRES_20 },
-  { name: 25, value: APRES_25 },
-  { name: 30, value: APRES_30 },
-  { name: 35, value: APRES_35 },
-  { name: 40, value: APRES_40 },
-  { name: 45, value: APRES_45 },
-  { name: 50, value: APRES_50 },
-  { name: 55, value: APRES_55 },
-  { name: 60, value: APRES_60 }
-];
-
-const PON  = 0x01;
-const AEN  = 0x02;
-// reserved  0x04;
-const WEN  = 0x08;
-const AIEN = 0x10;
+const { APRES_ENUM_MAP, GAIN_ENUM_MAP } = require('./defs.h');
 
 /**
  *
@@ -121,15 +63,7 @@ class Converter {
   }
 
   static formatControl(control) {
-    let multiplier;
-    switch(control.again) {
-    case GAIN_X1: multiplier = 1; break;
-    case GAIN_X4: multiplier = 4; break;
-    case GAIN_X16: multiplier = 16; break;
-    case GAIN_X60: multiplier = 60; break;
-    default: throw Error('unknown control: ' + control);
-    }
-
+    const multiplier = NameValueUtil.toName(control.again, GAIN_ENUM_MAP);
     return { again: control.again, multiplier: multiplier };
   }
 
@@ -242,17 +176,7 @@ class Converter {
   }
 
   static toControl(multiplier) {
-    let again;
-
-    switch(multiplier) {
-    case 1: again = GAIN_X1; break;
-    case 4: again = GAIN_X4; break;
-    case 16: again = GAIN_X16; break;
-    case 60: again = GAIN_X60; break;
-    default: throw new Error('unknown multiplier: ' + multiplier);
-    }
-
-    return again;
+    return NameValueUtil.toValue(multiplier, GAIN_ENUM_MAP);
   }
 
   // ---------------------------------------------------------------------------

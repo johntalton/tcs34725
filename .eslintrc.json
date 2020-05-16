@@ -278,8 +278,7 @@
         "johntalton",
         "todo", "const", "eslint", "bitwise",
         "param",
-        "aosong", "asair", "adafruit",
-        "crc", "util", "modbus", "ammodbus", "ammodbusdefs",
+        "adafruit",
         "rgb", "gpio", "onoff", "lux"
       ]
     }]
