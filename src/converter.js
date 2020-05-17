@@ -1,7 +1,7 @@
 
 const { NameValueUtil } = require('@johntalton/and-other-delights');
 
-const { APRES_ENUM_MAP, GAIN_ENUM_MAP } = require('./defs.h');
+const { Enumerations, Masks } = require('./defs.js');
 
 /**
  *
@@ -59,11 +59,11 @@ class Converter {
   }
 
   static formatPersistence(persistence) {
-    return NameValueUtil.toName(persistence.apres, APRES_ENUM_MAP);
+    return NameValueUtil.toName(persistence.apres, Enumerations.APRES_ENUM_MAP);
   }
 
   static formatControl(control) {
-    const multiplier = NameValueUtil.toName(control.again, GAIN_ENUM_MAP);
+    const multiplier = NameValueUtil.toName(control.again, Enumerations.GAIN_ENUM_MAP);
     return { again: control.again, multiplier: multiplier };
   }
 
@@ -73,10 +73,10 @@ class Converter {
     const value = buffer.readInt8(0);
 
     return {
-      AIEN: (value & AIEN) === AIEN,
-      WEN: (value & WEN) === WEN,
-      AEN: (value & AEN) === AEN,
-      PON: (value & PON) === PON
+      AIEN: (value & Masks.ENABLE_AIEN) === Masks.ENABLE_AIEN,
+      WEN: (value & Masks.ENABLE_WEN) === Masks.ENABLE_WEN,
+      AEN: (value & Masks.ENABLE_AEN) === Masks.ENABLE_AEN,
+      PON: (value & Masks.ENABLE_PON) === Masks.ENABLE_PON
     };
   }
 
@@ -101,37 +101,37 @@ class Converter {
   }
 
   static parsePersistence(buffer) {
-    const value = buffer[0] & APRES;
+    const value = buffer[0] & Masks.PRES_APRES;
     return { apres: value };
   }
 
   static parseConfiguration(buffer) {
     const value = buffer.readInt8(0);
-    return { wlong: (value & WLONG) === WLONG };
+    return { wlong: (value & Masks.CONFIG_WLONG) === Masks.CONFIG_WLONG };
   }
 
 
   static parseStatus(buffer) {
     const value = buffer.readInt8(0);
     return {
-      aint: (value & AINT) === AINT,
-      avalid: (value & AVALID) === AVALID
+      aint: (value & Masks.STATUS_AINT) === Masks.STATUS_AINT,
+      avalid: (value & Masks.STATUS_AVALID) === Masks.STATUS_AVALID
     };
   }
 
   static parseControl(buffer) {
     const value = buffer.readInt8(0);
-    const again = value & AGAIN;
+    const again = value & Masks.CONTROL_AGAIN;
     return { again: again };
   }
 
   // ---------------------------------------------------------------------------
 
   static toEnable(enable) {
-    return (enable.AIEN ? AIEN : 0) |
-           (enable.WEN ? WEN : 0) |
-           (enable.AEN ? AEN : 0) |
-           (enable.PON ? PON : 0);
+    return (enable.AIEN ? Masks.ENABLE_AIEN : 0) |
+           (enable.WEN ? Masks.ENABLE_WEN : 0) |
+           (enable.AEN ? Masks.ENABLE_AEN : 0) |
+           (enable.PON ? Masks.ENABLE_PON : 0);
   }
 
   static toTimingMs(ms) {
@@ -168,15 +168,15 @@ class Converter {
   }
 
   static toPersistence(persistence) {
-     return NameValueUtil.toValue(persistence, APRES_ENUM_MAP);
+     return NameValueUtil.toValue(persistence, Enumerations.APRES_ENUM_MAP);
  }
 
   static toConfiguration(wlong) {
-    return wlong ? WLONG : 0;
+    return wlong ? Masks.CONFIG_WLONG : 0;
   }
 
   static toControl(multiplier) {
-    return NameValueUtil.toValue(multiplier, GAIN_ENUM_MAP);
+    return NameValueUtil.toValue(multiplier, Enumerations.GAIN_ENUM_MAP);
   }
 
   // ---------------------------------------------------------------------------

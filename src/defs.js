@@ -41,7 +41,7 @@ const Registers = {
 // Register to start block read for Data
 const DATA_BLOCK_START_REGISTER = Registers.CDATAL;
 // Register to start block read for Threshold
-// const THRESHOLD_BLOCK_START_REGISTER = 0x04;
+const THRESHOLD_BLOCK_START_REGISTER = Registers.AILTL;
 // Register to start block read for Profile
 const PROFILE_BLOCK_START_REGISTER = Registers.ENABLE;
 
@@ -60,14 +60,17 @@ const SpecialFunctions = {
 // Mask address but to indicate this is a Command
 const TCS34725_COMMAND_BIT = 0x80;
 
-function makeCommand(addrSf, type = CommandTypes.REPEATED_BYTE_PROTOCOL, command = true) {
-  return addrSf | (type << 5) | (command ? TCS34725_COMMAND_BIT : 0);
+function makeCommand(addressOrSpecialFunction, type = CommandTypes.REPEATED_BYTE_PROTOCOL, command = true) {
+  // console.log('makeCommand', addressOrSpecialFunction, type, command);
+  if(addressOrSpecialFunction === undefined) { throw Error('undefined addressOrSpecialFunction'); }
+  return addressOrSpecialFunction | (type << 5) | (command ? TCS34725_COMMAND_BIT : 0);
 }
 
 // Clear channel interrupt clear
 const COMMAND_CLEAR = makeCommand(SpecialFunctions.CLEAR, CommandTypes.SPECIAL);
 const COMMAND_BULK_DATA = makeCommand(DATA_BLOCK_START_REGISTER, CommandTypes.AUTO_INCREMENT_PROTOCOL);
 const COMMAND_BULK_PROFILE = makeCommand(PROFILE_BLOCK_START_REGISTER, CommandTypes.AUTO_INCREMENT_PROTOCOL);
+const COMMAND_BULK_THRESHOLD = makeCommand(THRESHOLD_BLOCK_START_REGISTER, CommandTypes.AUTO_INCREMENT_PROTOCOL);
 
 // Named 8-bit mask 
 const Masks = {
@@ -144,7 +147,7 @@ module.exports = {
   TCS34725_I2C_PART_NUMBER,
   TCS34725_COMMAND_BIT,
   makeCommand,
-  COMMAND_CLEAR, COMMAND_BULK_DATA, COMMAND_BULK_PROFILE,
+  COMMAND_CLEAR, COMMAND_BULK_DATA, COMMAND_BULK_PROFILE, COMMAND_BULK_THRESHOLD,
   Registers,
   Enumerations,
   Masks

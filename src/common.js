@@ -3,7 +3,7 @@ const { Converter } = require('./converter.js');
 const {
   Registers,
   makeCommand,
-  COMMAND_CLEAR, COMMAND_BULK_DATA, COMMAND_BULK_PROFILE
+  COMMAND_CLEAR, COMMAND_BULK_DATA, COMMAND_BULK_PROFILE, COMMAND_BULK_THRESHOLD
  } = require('./defs.js');
 
 /**
@@ -49,13 +49,13 @@ class Common {
   }
 
   static _threshold(bus) {
-    return bus.read(makeCommand(Registers.THRESHOLD_BLOCK_START), 4).then(buffer => {
+    return bus.read(COMMAND_BULK_THRESHOLD, 4).then(buffer => {
       return Converter.parseThreshold(buffer);
     });
   }
 
   static thresholdBulk(bus, threshold) {
-    return bus.write(makeCommand(Registers.THRESHOLD_BLOCK_START), threshold);
+    return bus.write(COMMAND_BULK_THRESHOLD, threshold);
   }
 
   static threshold(bus, threshold) {
@@ -107,15 +107,15 @@ class Common {
     return bus.read(COMMAND_BULK_PROFILE, 20).then(buffer => {
       // console.log(buffer);
 
-      const enable = Converter.parseEnable(buffer.readUInt8(0));
-      const timing = Converter.parseTiming(buffer.readUInt8(1));
-      const wtiming = Converter.parseWTiming(buffer.readUInt8(3));
-      const threshold = Converter.parseThreshold(buffer.readInt16LE(4), buffer.readInt16LE(6));
+      const enable = Converter.parseEnable(buffer.subarray(0, 1));
+      const timing = Converter.parseTiming(buffer.subarray(1, 2));
+      const wtiming = Converter.parseWTiming(buffer.subarray(3, 4));
+      const threshold = Converter.parseThreshold(Buffer.concat([buffer.subarray(4, 6), buffer.subarray(6, 8)]));
 
-      const persistence = Converter.parsePersistence(buffer.readUInt8(13));
-      const config = Converter.parseConfiguration(buffer.readUInt8(14));
-      const control = Converter.parseControl(buffer.readUInt8(16))
-      const status = Converter.parseStatus(buffer.readUInt8(19));
+      const persistence = Converter.parsePersistence(buffer.subarray(13, 14));
+      const config = Converter.parseConfiguration(buffer.subarray(14, 15));
+      const control = Converter.parseControl(buffer.subarray(16, 17))
+      const status = Converter.parseStatus(buffer.subarray(19, 20));
 
       return [enable, timing, wtiming, threshold, persistence, config, control, status];
     });

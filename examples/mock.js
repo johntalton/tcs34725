@@ -4,7 +4,7 @@ const { I2CAddressedBus } = require('@johntalton/and-other-delights');
 const { Tcs34725 } = require('..');
 
 const tcsDeviceDef = {
-  commandMask: 0x7F,
+  commandMask: 0x1F, // ~(0x80 | 0x60),
 
   profile: {
     powerOn: { ref: 'PON' },
@@ -125,7 +125,7 @@ class MockDevice {
     const maskedCommand = command & this.definition.commandMask;
     
     [...buffer].filter((_, index) => index < length).forEach((item, index) => {
-      if(!this.register(maskedCommand + index).valid) { console.log('invalid write address', maskedCommand, index); return; }
+      if(!this.register(maskedCommand + index).valid) { console.log('invalid write address', '0x' + maskedCommand.toString(16), index); return; }
       if(this.register(maskedCommand + index).readOnly === true) { console.log('readOnly'); return; }
       this.register(maskedCommand + index).data = item;
     });
@@ -134,13 +134,13 @@ class MockDevice {
   }
 
   readI2cBlock(address, command, length) {
-    // console.log('Mock Read', address.toString(16), command.toString(16), length);
+    console.log('Mock Read', address.toString(16), command.toString(16), length);
 
     const maskedCommand = command & this.definition.commandMask;
  
     const buffer = Buffer.alloc(length);
     [...new Array(length)].forEach((_, index) => {
-      if(!this.register(maskedCommand + index).valid) { console.log('invalid read address'); return; }
+      if(!this.register(maskedCommand + index).valid) { console.log('invalid read address', '0x' + maskedCommand.toString(16), index); return; }
       buffer[index] = this.register(maskedCommand + index).data;
     });
     const bytesRead = buffer.length;
