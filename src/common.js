@@ -1,7 +1,9 @@
+const { NameValueUtil } = require('@johntalton/and-other-delights');
 
 const { Converter } = require('./converter.js');
 const {
   Registers,
+  Enumerations,
   makeCommand,
   COMMAND_CLEAR, COMMAND_BULK_DATA, COMMAND_BULK_PROFILE, COMMAND_BULK_THRESHOLD
  } = require('./defs.js');
@@ -28,9 +30,9 @@ class Common {
   }
 
 
-  static _timing(bus) {
+  static _integrationTiming(bus) {
     return bus.read(makeCommand(Registers.ATIME), 1).then(buffer => {
-      return Converter.parseTiming(buffer);
+      return Converter.parseIntegrationTiming(buffer);
     });
   }
 
@@ -38,9 +40,9 @@ class Common {
     return bus.write(makeCommand(Registers.ATIME), timing);
   }
 
-  static _wtiming(bus) {
+  static _waitTiming(bus) {
     return bus.read(makeCommand(Registers.WTIME), 1).then(buffer => {
-      return Converter.parseWTiming(buffer);
+      return Converter.parseWaitTiming(buffer);
     });
   }
 
@@ -55,15 +57,19 @@ class Common {
   }
 
   static thresholdBulk(bus, threshold) {
-    return bus.write(COMMAND_BULK_THRESHOLD, threshold);
+    const thresholdBytes = Converter.toThreshold(threshold);
+    return bus.write(COMMAND_BULK_THRESHOLD, Buffer.from(thresholdBytes));
   }
 
   static threshold(bus, threshold) {
+    console.log('setting thershold', threshold)
+    // todo only set `high` or `low` if they exist / not undefined
+    const thresholdBytes = Converter.toThreshold(threshold);
     return Promise.all([
-      bus.write(makeCommand(Registers.AILTL), threshold[0]),
-      bus.write(makeCommand(Registers.AILTH), threshold[1]),
-      bus.write(makeCommand(Registers.AIHTL), threshold[2]),
-      bus.write(makeCommand(Registers.AIHTH), threshold[3])
+      bus.write(makeCommand(Registers.AILTL), thresholdBytes[0]),
+      bus.write(makeCommand(Registers.AILTH), thresholdBytes[1]),
+      bus.write(makeCommand(Registers.AIHTL), thresholdBytes[2]),
+      bus.write(makeCommand(Registers.AIHTH), thresholdBytes[3])
     ]);
   }
 
@@ -105,27 +111,29 @@ class Common {
 
   static _profileBulk(bus) {
     return bus.read(COMMAND_BULK_PROFILE, 20).then(buffer => {
-      // console.log(buffer);
-
       const enable = Converter.parseEnable(buffer.subarray(0, 1));
-      const timing = Converter.parseTiming(buffer.subarray(1, 2));
-      const wtiming = Converter.parseWTiming(buffer.subarray(3, 4));
+      const integrationTiming = Converter.parseIntegrationTiming(buffer.subarray(1, 2));
+      // reserved
+      const waitTiming = Converter.parseWaitTiming(buffer.subarray(3, 4));
       const threshold = Converter.parseThreshold(Buffer.concat([buffer.subarray(4, 6), buffer.subarray(6, 8)]));
-
-      const persistence = Converter.parsePersistence(buffer.subarray(13, 14));
-      const config = Converter.parseConfiguration(buffer.subarray(14, 15));
-      const control = Converter.parseControl(buffer.subarray(16, 17))
+      // reserved
+      const persistence = Converter.parsePersistence(buffer.subarray(12, 13));
+      const config = Converter.parseConfiguration(buffer.subarray(13, 14));
+      // reserved
+      const control = Converter.parseControl(buffer.subarray(15, 16))
+      // reserved
       const status = Converter.parseStatus(buffer.subarray(19, 20));
 
-      return [enable, timing, wtiming, threshold, persistence, config, control, status];
+      //
+      return [enable, integrationTiming, waitTiming, threshold, persistence, config, control, status];
     });
   }
 
   static _rawProfile(bus) {
     return Promise.all([
       Common._enable(bus),
-      Common._timing(bus),
-      Common._wtiming(bus),
+      Common._integrationTiming(bus),
+      Common._waitTtiming(bus),
       Common._threshold(bus),
       Common._persistence(bus),
       Common._config(bus),
@@ -135,18 +143,38 @@ class Common {
   }
 
   static _profile(bus) {
-    return Common._profileBulk(bus).then(parts => {
-    // return Common._rawProfile(bus).then(parts => {
-      const [enable, timing, wtiming, threshold, persistence, config, control, status] = parts;
-      return Converter.formatProfile(enable, timing, wtiming, threshold, persistence, config, control, status);
+    return Common._profileBulk(bus)
+    // return Common._rawProfile(bus)
+    .then(parts => {
+      const [enable, integrationTiming, waitTiming, threshold, persistence, config, control, status] = parts;
+      return {
+        ...enable,
+        ...Converter.formatWaitTiming(waitTiming, config.wlong),
+        ...integrationTiming,
+        threshold: threshold,
+        // ...threshold,
+        filtering: NameValueUtil.toName(persistence.apres, Enumerations.APRES_ENUM_MAP),
+        gain: NameValueUtil.toName(control.again, Enumerations.GAIN_ENUM_MAP),
+
+        valid: status.avalid,
+        thresholdViolation: status.aint
+      };
     });
   }
 
-  static setProfile(bus, enable, timing, wtiming, threshold, persistence, config, control) {
+  static setProfile(bus, profile) {
+    const enable = Converter.toEnable(profile); // todo do not pass entire proifle
+    const timing = Converter.toTimingMs(profile.integrationTimeMs);
+    const [wtime, wlong] = Converter.toWTimingMs(profile.waitTimeMs);
+    const threshold = profile.threshold || { low: profile.low, high: profile.high };
+    const persistence = Converter.toPersistence(profile.filtering);
+    const config = Converter.toConfiguration(wlong);
+    const control = Converter.toControl(profile.gain);
+
     // sets all independently, though, all may not run in order
     return Promise.all([
       Common.timing(bus, timing),
-      Common.wtiming(bus, wtiming),
+      Common.wtiming(bus, wtime),
       Common.threshold(bus, threshold),
       Common.persistence(bus, persistence),
       Common.config(bus, config),

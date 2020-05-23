@@ -1,6 +1,6 @@
 /* eslint-disable max-classes-per-file */
 
-const { I2CAddressedBus } = require('@johntalton/and-other-delights');
+const { I2CAddressedBus, I2CMockBus } = require('@johntalton/and-other-delights');
 const { Tcs34725 } = require('..');
 
 const tcsDeviceDef = {
@@ -27,7 +27,7 @@ const tcsDeviceDef = {
   data: {},
 
   register: {
-    0x00: { 
+    0x00: {
       name: 'ENABLE',
       properties: {
         'AIEN': { bit: 4 },
@@ -48,7 +48,7 @@ const tcsDeviceDef = {
         'APRES': { bits: [3, 0], enum: {} }
       }
     },
-    0x0d: { 
+    0x0d: {
       name: 'CONFIG',
       properties: {
         'WLONG': { bit: 1 }
@@ -62,11 +62,11 @@ const tcsDeviceDef = {
     },
     0x12: { nanme: 'ID', readOnly: true, data: 0x44, enum: {} },
     0x13: {
-      name: 'STATUS', 
+      name: 'STATUS',
       readOnly: true,
       properties: {
-        'AINT': { bit: 4 }, 
-        'AVALID': { bit: 0 } 
+        'AINT': { bit: 4 },
+        'AVALID': { bit: 0 }
       }
     },
 
@@ -82,102 +82,12 @@ const tcsDeviceDef = {
 
 };
 
-class MockRegister {
-  constructor(key, options) { this.key = key; this.options = options; }
-  get valid() { return this.key !== undefined; }
-  get name() { return this.options.name; }
-  get readOnly() { return this.options.readOnly; }
-  get data() { return this.options.data; }
-  set data(data) { this.options.data = data; }
-}
-
-class MockRegisterDefinition {
-  constructor(definition) {
-    this.definition = definition;
-    Object.keys(this.definition.register).forEach(key => {
-      this.definition.register[key].client = new MockRegister(key, this.definition.register[key]);
-    });
-  }
-
-  get commandMask() { return this.definition.commandMask; }
-
-
-  register(register) {
-    if(this.definition.register[register.toString()] === undefined) { return new MockRegister(); }
-    // console.log(this.definition.register[register.toString()].client.valid);
-    return this.definition.register[register.toString()].client;
-  }
-}
-
-class MockDevice {
-  constructor(busAddress, deviceDef) {
-    this.busAddress = busAddress;
-    this.definition = new MockRegisterDefinition(deviceDef);
-  }
-  
-  register(register) {
-    return this.definition.register(register);
-  }
-
-  writeI2cBlock(address, command, length, buffer) {
-    // console.log('Mock Write', address.toString(16), command.toString(16), buffer);
-
-    const maskedCommand = command & this.definition.commandMask;
-    
-    [...buffer].filter((_, index) => index < length).forEach((item, index) => {
-      if(!this.register(maskedCommand + index).valid) { console.log('invalid write address', '0x' + maskedCommand.toString(16), index); return; }
-      if(this.register(maskedCommand + index).readOnly === true) { console.log('readOnly'); return; }
-      this.register(maskedCommand + index).data = item;
-    });
-    const bytesWriten = length;
-    return Promise.resolve({ bytesWriten, buffer });
-  }
-
-  readI2cBlock(address, command, length) {
-    console.log('Mock Read', address.toString(16), command.toString(16), length);
-
-    const maskedCommand = command & this.definition.commandMask;
- 
-    const buffer = Buffer.alloc(length);
-    [...new Array(length)].forEach((_, index) => {
-      if(!this.register(maskedCommand + index).valid) { console.log('invalid read address', '0x' + maskedCommand.toString(16), index); return; }
-      buffer[index] = this.register(maskedCommand + index).data;
-    });
-    const bytesRead = buffer.length;
-    return Promise.resolve({ bytesRead, buffer });
-  }
-}
-
-class MockBus {
-  constructor(busNumber) {
-    this.busNumber = busNumber;
-  }
-
-  static addDevice(bus, address, device) {
-    if(MockBus.addressMap === undefined) { MockBus.addressMap = {}; }
-    if(MockBus.addressMap[bus] === undefined){ MockBus.addressMap[bus] = {}; }
-    MockBus.addressMap[bus][address] = device;
-  }
-
-  static openPromisified(busNumber) {
-    return Promise.resolve(new MockBus(busNumber));
-  }
-
-  writeI2cBlock(address, command, length, buffer) {
-    return MockBus.addressMap[this.busNumber][address].writeI2cBlock(address, command, length, buffer);
-  }
-
-  readI2cBlock(address, command, length) {
-    return MockBus.addressMap[this.busNumber][address].readI2cBlock(address, command, length);
-  }
-}
-
-MockBus.addDevice(1, 0x29, new MockDevice(0x29, tcsDeviceDef))
+I2CMockBus.addDevice(1, 0x29, tcsDeviceDef)
 
 const busNumber = 1;
 const busAddress = 0x29;
 
-MockBus.openPromisified(busNumber)
+I2CMockBus.openPromisified(busNumber)
   .then(bus => new I2CAddressedBus(bus, busAddress))
   .then(bus => Tcs34725.init(bus))
   .then(tcs => {
@@ -187,7 +97,7 @@ MockBus.openPromisified(busNumber)
       integrationTimeMs: 24,
       wait: true,
       waitTimeMs: 2 * 1000,
-      multiplier: 4,
+      gain: 4,
       filtering: 30,
       interrupts: true,
       low: 280,

@@ -125,6 +125,8 @@ class Device {
     // await all promises and catch all errors
     console.log('interrupt ...');
 
+    const interruptTime = Date.now();
+
     if(err) {
       console.log('gpio interrupt error', config.name, err);
       // todo teardown client or just ignore, or what
@@ -138,7 +140,11 @@ class Device {
       config.client.threshold(),
       config.client.data()
     ])
-      .then(([threshold, data]) => Device.handleThreshold(config, threshold, data))
+      .then(([threshold, data]) => Device.handleThreshold(config, {
+        threshold,
+        data,
+        time: interruptTime
+      }))
       .catch(e => {
         console.log('error in watch interrupt', config.name, e);
       });
@@ -150,7 +156,8 @@ class Device {
     return 0;
   }
 
-  static handleThreshold(config, threshold, data) {
+  static handleThreshold(config, result) {
+    const { threshold, data, time } = result;
     const direction = Device.directionForDataThreshold(data.raw.c, threshold);
 
     // console.log('reconfigure thresholds', config.name, data.raw.c, threshold, direction);
@@ -191,22 +198,26 @@ class Device {
       if(newt.high > 0xFFFF) { newt.low = 0xFFFF; } // todo max thresh value
 
       // make first our set call
-      first = config.client.setThreshold(newt.low, newt.high);
+      first = config.client.setThreshold(newt);
     } else {
       console.log('direction Zero, odd as this is interrupt driven, quick mover?');
     }
 
     // after that, we just emit the change and clear
     return first.then(() => {
-      config.emitter.emit('step', newt, direction, data.raw.c);
+      config.emitter.emit('step', newt, direction, data.raw.c, time);
       return config.client.clearInterrupt();
     });
   }
 
   static pollDeviceInfo(config) {
+    // fetch the device information using either a `status` or `profile` call
+    //   or if no poll.<method> is enabled (true) then return empty config
+    //   and expect the handler to ... uh, handle
+
     // if nothing enabled, just return
     if(config.poll.status === false && config.poll.profile === false) {
-      return Promise.resolve({});
+      return Promise.resolve({ disabled: true });
     }
 
     // profile true overrides all (none case handled above)
@@ -215,12 +226,7 @@ class Device {
     if(!full) {
       // not full is just status
       return config.client.status()
-        .then(s => {
-          return {
-            valid: s.avalid,
-            thresholdViolation: s.aint
-          };
-        });
+        .then(s => ({ ...s, time: Date.now() })); // close to the time we accessed this status
     }
 
     // full profile fetch
@@ -233,13 +239,15 @@ class Device {
       if(result.thresholdViolation === true) {
         //
         if(result.threshold === undefined) {
+          console.log('software inerrupt skipped, no threshold', result)
           return Promise.reject(Error('software interrupt skipped, no threshold'));
         }
         if(data === undefined) {
           return Promise.reject(Error('software interrupt skipped, no data'));
         }
 
-        return Device.handleThreshold(config, result.threshold, data);
+        const threshold = result.threshold;
+        return Device.handleThreshold(config, { threshold, data, time: reuslt.time });
       }
     }
     return Promise.resolve(result);
@@ -283,8 +291,8 @@ class Device {
       .then(result => {
         // check results to see if all ok, if we bothered running anything
         if(result.valid !== undefined && !result.valid) {
-          console.log('data integration not completed / not ready', config.name, result);
-          return Promise.resolve();
+          console.log('data integration not completed / not ready', config.name);
+          return result; // pass along
         }
 
         return Device.pollPerformBeforeAll(config, result)
@@ -304,6 +312,7 @@ class Device {
         // do that glorious data read
         return Device.ledOnWithDelay(config)
           .then(() => config.client.data())
+          .then(data => ({ ...data, time: Date.now() })) // close to data aquasition time
           .then(data => Device.pollPerformAfterAll(config, result, data)
             .then(() => { config.emitter.emit('data', data, result); }))
           .finally(() => Device.ledOff(config));
@@ -359,7 +368,7 @@ class Device {
   static enableInterrupt(config) {
     // todo rename? as this is a full setup/teardown for each enable/disable and not for pausing
     //   as this causes a full cleanup of the underlining client. pause should be in the actual handler?
-
+    console.log('enableInterupt');
     if(config.interrupt.disabled) { return; }
     if(config.interrupt.client === undefined) { throw Error('client not defined'); } // todo over aggressive checking
     config.interrupt.wcb = (err, value) => Device.watchInt(config, err, value);
@@ -368,6 +377,7 @@ class Device {
   }
 
   static disableInterrupt(config) {
+    console.log('disableInterrupts');
     if(config.interrupt.disabled) { return; }
     console.log('gpio interrupt disabled');
     config.interrupt.client.unwatch(config.interrupt.wcb); // eslint-disable-line fp/no-mutating-methods
