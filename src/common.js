@@ -156,8 +156,7 @@ class Common {
         filtering: NameValueUtil.toName(persistence.apres, Enumerations.APRES_ENUM_MAP),
         gain: NameValueUtil.toName(control.again, Enumerations.GAIN_ENUM_MAP),
 
-        valid: status.avalid,
-        thresholdViolation: status.aint
+        ...status
       };
     });
   }
