@@ -1,10 +1,9 @@
-
 const { Converter } = require('./converter.js');
 const {
   Registers,
   makeCommand,
   COMMAND_CLEAR, COMMAND_BULK_DATA, COMMAND_BULK_PROFILE, COMMAND_BULK_THRESHOLD
- } = require('./defs.js');
+} = require('./defs.js');
 
 /**
  *
@@ -114,7 +113,7 @@ class Common {
 
       const persistence = Converter.parsePersistence(buffer.subarray(13, 14));
       const config = Converter.parseConfiguration(buffer.subarray(14, 15));
-      const control = Converter.parseControl(buffer.subarray(16, 17))
+      const control = Converter.parseControl(buffer.subarray(16, 17));
       const status = Converter.parseStatus(buffer.subarray(19, 20));
 
       return [enable, timing, wtiming, threshold, persistence, config, control, status];
@@ -151,8 +150,8 @@ class Common {
       Common.persistence(bus, persistence),
       Common.config(bus, config),
       Common.control(bus, control)
-      ])
-      .then(() => Common.enable(bus, enable));
+    ])
+    .then(() => Common.enable(bus, enable));
   }
 
   static clearInterrupt(bus) {

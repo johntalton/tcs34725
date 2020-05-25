@@ -5,6 +5,51 @@ Supporting full set of device features.
 
 [Adafruit ofcourse](https://www.adafruit.com/product/1334)
 
+## API
+
+### ```Tcs34725```
+
+Primary interface method for accessing the sensor and factory for creating class instances.
+
+example usage:
+
+```javascript
+const sensor = await Tcs34725.init(i2cbus);
+const color = await sensor.data();    
+```
+
+##### ```static init```
+
+Pass and I2CBus compliant implementation as a parameter.
+Returns a instance of this class.
+
+##### ```close```
+
+Closes the device and bus instance.
+
+##### ```id```
+
+Retrives the chips ID.
+
+##### ```profile```
+
+Retrives full profile, including status, from the chip.
+
+##### ```status```
+
+Retrives status flag, including ```thresholdViolation``` and ```valid```.
+
+If ```thresholdViolation``` is true, then the chips clear channel has excided the 
+
+
+##### ```threshold```
+##### ```setThreshold```
+##### ```setProfile```
+##### ```clearInterrupt```
+##### ```data```
+
+
+
 ## REPL
 
 Exmple repl used to interact with sensor and show basic usage. Can be used along side client to help configure and debug sensor.

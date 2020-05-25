@@ -1,12 +1,10 @@
-
-
 const TCS34725_I2C_ADDRESS = 0x29;
 const TCS34725_I2C_PART_NUMBER = 0x44; // TCS34721 and TCS34725
 // const TCS_I2C_PART_NUMBER = 0x4D // TCS34723 and TCS34727
 
 // just shorthand
-const CHIP_ID = TCS34725_I2C_PART_NUMBER;
-const ADDRESS = TCS34725_I2C_ADDRESS;
+// const CHIP_ID = TCS34725_I2C_PART_NUMBER;
+// const ADDRESS = TCS34725_I2C_ADDRESS;
 
 // Device registers by name
 const Registers = {
@@ -22,9 +20,9 @@ const Registers = {
   PERS: 0x0C,
   CONFIG: 0x0D,
   CONTROL: 0x0F,
-  
+
   ID: 0x12,
-  
+
   STATUS: 0x13,
 
   // We use data block bellow instead
@@ -62,8 +60,8 @@ const TCS34725_COMMAND_BIT = 0x80;
 
 function makeCommand(addressOrSpecialFunction, type = CommandTypes.REPEATED_BYTE_PROTOCOL, command = true) {
   // console.log('makeCommand', addressOrSpecialFunction, type, command);
-  if(addressOrSpecialFunction === undefined) { throw Error('undefined addressOrSpecialFunction'); }
-  return addressOrSpecialFunction | (type << 5) | (command ? TCS34725_COMMAND_BIT : 0);
+  if(addressOrSpecialFunction === undefined) { throw new Error('undefined addressOrSpecialFunction'); }
+  return addressOrSpecialFunction | type << 5 | (command ? TCS34725_COMMAND_BIT : 0);
 }
 
 // Clear channel interrupt clear
@@ -72,16 +70,16 @@ const COMMAND_BULK_DATA = makeCommand(DATA_BLOCK_START_REGISTER, CommandTypes.AU
 const COMMAND_BULK_PROFILE = makeCommand(PROFILE_BLOCK_START_REGISTER, CommandTypes.AUTO_INCREMENT_PROTOCOL);
 const COMMAND_BULK_THRESHOLD = makeCommand(THRESHOLD_BLOCK_START_REGISTER, CommandTypes.AUTO_INCREMENT_PROTOCOL);
 
-// Named 8-bit mask 
+// Named 8-bit mask
 const Masks = {
   STATUS_AINT: 0b00010000,
   STATUS_AVALID: 0b00000001,
   CONTROL_AGAIN: 0b00000011,
   CONFIG_WLONG: 0b00000010,
   PRES_APRES: 0b00001111,
-  ENABLE_PON : 0x01,
-  ENABLE_AEN : 0x02,
-  ENABLE_WEN : 0x08,
+  ENABLE_PON: 0x01,
+  ENABLE_AEN: 0x02,
+  ENABLE_WEN: 0x08,
   ENABLE_AIEN: 0x10
 };
 
@@ -142,7 +140,7 @@ const Enumerations = {
   GAIN_ENUM_MAP
 };
 
-module.exports = { 
+module.exports = {
   TCS34725_I2C_ADDRESS,
   TCS34725_I2C_PART_NUMBER,
   TCS34725_COMMAND_BIT,

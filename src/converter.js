@@ -1,4 +1,3 @@
-
 const { NameValueUtil } = require('@johntalton/and-other-delights');
 
 const { Enumerations, Masks } = require('./defs.js');
@@ -45,7 +44,7 @@ class Converter {
       milliseconds: ms
     };
   }
-  
+
   static formatTiming(timing) {
     const integCycles = 256 - timing.atime;
     const maxCount = integCycles * 1024;
@@ -159,17 +158,17 @@ class Converter {
     return 256 - count;
   }
 
-  
+
   static toThreshold(low, high) {
     return [
       low & 0xFF, low >> 8 & 0xFF,
       high & 0xFF, high >> 8 & 0xFF
-   ];
+    ];
   }
 
   static toPersistence(persistence) {
-     return NameValueUtil.toValue(persistence, Enumerations.APRES_ENUM_MAP);
- }
+    return NameValueUtil.toValue(persistence, Enumerations.APRES_ENUM_MAP);
+  }
 
   static toConfiguration(wlong) {
     return wlong ? Masks.CONFIG_WLONG : 0;
@@ -213,9 +212,9 @@ class Converter {
     const green = raw.g / raw.c;
     const blue = raw.b / raw.c;
 
-    //const r = Math.trunc(Math.pow(Math.trunc(red * 256) / 255, 2.5) * 255);
-    //const g = Math.trunc(Math.pow(Math.trunc(green * 256) / 255, 2.5) * 255);
-    //const b = Math.trunc(Math.pow(Math.trunc(blue * 256) / 255, 2.5) * 255);
+    // const r = Math.trunc(Math.pow(Math.trunc(red * 256) / 255, 2.5) * 255);
+    // const g = Math.trunc(Math.pow(Math.trunc(green * 256) / 255, 2.5) * 255);
+    // const b = Math.trunc(Math.pow(Math.trunc(blue * 256) / 255, 2.5) * 255);
 
     const r = Math.trunc(red * 255);
     const g = Math.trunc(green * 255);
