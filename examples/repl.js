@@ -24,8 +24,7 @@ Repler.addCommand({
   callback: state => {
     return state.tcs.setProfile({
         powerOn: true,
-        active: true,
-        wait: false
+        threshold: { low: 0, high: 100 }
       })
       .then(() => {
         console.log('on (power / active / no-wait)');
@@ -60,14 +59,18 @@ Repler.addCommand({
     return state.tcs.setProfile({
       powerOn: true,
       active: true,
-      integrationTimeMs: 24,
       wait: true,
-      waitTimeMs: 2 * 1000,
-      multiplier: 4,
-      filtering: 30,
       interrupts: true,
-      low: 280,
-      high: 290
+
+      integrationTimeMs: 240,
+      waitTimeMs: 7 * 1000,
+
+      gain: 60,
+
+      filtering: 1,
+      low: 0,
+      high: 100
+
     }).then(() => {
       console.log('profile set to continous converstion mode');
     });
@@ -110,4 +113,4 @@ Repler.addCommand({
 });
 
 
-Repler.go({ autologoutMs: 10 * 1000 });
+Repler.go({ autologoutMs: 30 * 1000 });

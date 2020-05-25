@@ -6,64 +6,15 @@ const { Enumerations, Masks } = require('./defs.js');
  *
  */
 class Converter {
-  /**
-   * @param enable An object with PON, AEN, AIEN and WEN property.
-   * @param timing A value representing integration time.
-   * @param wTiming A scalar value associated with the `config.wLong` setting.
-   * @param threshold An object with `high` and `low` properties.
-   * @param persistence Value for persistence.
-   * @param config An object with `wLong` property.
-   * @param control Gain value.
-   * @param status An object with `aValid and `aInt` properties.
-   * @returns A friendly named - formatted -  object to use at a high level.
-   **/
-  static formatProfile(enable, timing, wTiming, threshold, persistence, config, control, status) {
+
+  static formatWaitTiming(waitTiming, wlong) {
+    // docs suggest twos compliment encoded value
+    const waitTimeMs = waitTiming.waitCount * 2.4 * (wlong ? 12 : 1);
     return {
-      powerOn: enable.PON,
-      active: enable.AEN,
-      interrupts: enable.AIEN,
-      wait: enable.WEN,
-      waitTime: Converter.formatWTiming(wTiming, config.wlong),
-      integrationTime: Converter.formatTiming(timing),
-      threshold: { low: threshold.low, high: threshold.high },
-      filtering: Converter.formatPersistence(persistence),
-      gain: Converter.formatControl(control),
-
-      valid: status.avalid,
-      thresholdViolation: status.aint
+      ...waitTiming,
+      _wlong: wlong,
+      waitTimeMs
     };
-  }
-
-  static formatWTiming(wtiming, wlong) {
-    const waitCount = 256 - wtiming.wtime;
-    const ms = waitCount * 2.4 * (wlong ? 12 : 1);
-    return {
-      wtime: wtiming.wtime,
-      wlong: wlong,
-      waitCount: waitCount,
-      milliseconds: ms
-    };
-  }
-
-  static formatTiming(timing) {
-    const integCycles = 256 - timing.atime;
-    const maxCount = integCycles * 1024;
-    const millisecond = integCycles * 2.4;
-    return {
-      atime: timing.atime,
-      integCycles: integCycles,
-      maxCount: maxCount,
-      millisecond: millisecond
-    };
-  }
-
-  static formatPersistence(persistence) {
-    return NameValueUtil.toName(persistence.apres, Enumerations.APRES_ENUM_MAP);
-  }
-
-  static formatControl(control) {
-    const multiplier = NameValueUtil.toName(control.again, Enumerations.GAIN_ENUM_MAP);
-    return { again: control.again, multiplier: multiplier };
   }
 
   // ---------------------------------------------------------------------------
@@ -72,21 +23,34 @@ class Converter {
     const value = buffer.readInt8(0);
 
     return {
-      AIEN: (value & Masks.ENABLE_AIEN) === Masks.ENABLE_AIEN,
-      WEN: (value & Masks.ENABLE_WEN) === Masks.ENABLE_WEN,
-      AEN: (value & Masks.ENABLE_AEN) === Masks.ENABLE_AEN,
-      PON: (value & Masks.ENABLE_PON) === Masks.ENABLE_PON
+      powerOn: (value & Masks.ENABLE_PON) === Masks.ENABLE_PON,
+      active: (value & Masks.ENABLE_AEN) === Masks.ENABLE_AEN,
+      wait: (value & Masks.ENABLE_WEN) === Masks.ENABLE_WEN,
+      interrupts: (value & Masks.ENABLE_AIEN) === Masks.ENABLE_AIEN
     };
   }
 
-  static parseWTiming(buffer) {
-    const value = buffer.readInt8(0);
-    return { wtime: value };
+  static parseWaitTiming(buffer) {
+    const _wtime = buffer.readUInt8(0);
+    const waitCount = 256 - _wtime;
+    return {
+      _wtime,
+      waitCount
+    };
   }
 
-  static parseTiming(buffer) {
-    const value = buffer.readInt8(0);
-    return { atime: value };
+  static parseIntegrationTiming(buffer) {
+    const _atime = buffer.readUInt8(0);
+
+    const integrationCycles = 256 - _atime;
+    const integrationMaxCount = integrationCycles * 1024;
+    const integrationTimeMs = integrationCycles * 2.4;
+    return {
+      _atime,
+      integrationCycles,
+      integrationMaxCount,
+      integrationTimeMs
+    };
   }
 
 
@@ -100,8 +64,8 @@ class Converter {
   }
 
   static parsePersistence(buffer) {
-    const value = buffer[0] & Masks.PRES_APRES;
-    return { apres: value };
+    const apres = buffer[0] & Masks.PRES_APRES;
+    return { apres };
   }
 
   static parseConfiguration(buffer) {
@@ -112,9 +76,11 @@ class Converter {
 
   static parseStatus(buffer) {
     const value = buffer.readInt8(0);
+    const aint = (value & Masks.STATUS_AINT) === Masks.STATUS_AINT;
+    const avalid = (value & Masks.STATUS_AVALID) === Masks.STATUS_AVALID;
     return {
-      aint: (value & Masks.STATUS_AINT) === Masks.STATUS_AINT,
-      avalid: (value & Masks.STATUS_AVALID) === Masks.STATUS_AVALID
+      valid: avalid,
+      thresholdViolation: aint
     };
   }
 
@@ -127,10 +93,10 @@ class Converter {
   // ---------------------------------------------------------------------------
 
   static toEnable(enable) {
-    return (enable.AIEN ? Masks.ENABLE_AIEN : 0) |
-           (enable.WEN ? Masks.ENABLE_WEN : 0) |
-           (enable.AEN ? Masks.ENABLE_AEN : 0) |
-           (enable.PON ? Masks.ENABLE_PON : 0);
+    return (enable.interrupts ? Masks.ENABLE_AIEN : 0) |
+           (enable.wait ? Masks.ENABLE_WEN : 0) |
+           (enable.active ? Masks.ENABLE_AEN : 0) |
+           (enable.powerOn ? Masks.ENABLE_PON : 0);
   }
 
   static toTimingMs(ms) {
@@ -139,17 +105,28 @@ class Converter {
     return 256 - count;
   }
 
-  static toWTimingMs(ms) {
-    let assumedWlong = false;
-    let waitCount = Math.round(ms / 2.4);
+  static toWTimingMs(ms, requestedWaitLong) {
+    const MAX_STEPS = 256;
+    const STEP_UNIT_SIZE_MS = 2.4;
+    const LONG_STEP_MULTIPLIER = 12;
 
-    if(ms > 256) {
-      // assume wLong true desired
+    const LONG_STEP_MS = LONG_STEP_MULTIPLIER * STEP_UNIT_SIZE_MS;
+    const STEP_MS = STEP_UNIT_SIZE_MS;
+
+    const RANGE = { low: STEP_MS, high: MAX_STEPS * STEP_MS };
+    const LONG_RANGE = { low: LONG_STEP_MS, high: MAX_STEPS * LONG_STEP_MS };
+
+    // continue using the higher resolution timing calculation
+    // until it is no-longer in range.  Then switch to the 12x.
+    // todo this choice can be used for fingerprinting
+    let assumedWlong = false;
+    if(ms > RANGE.high) {
+      // console.log('out of one x range, twellve x');
       assumedWlong = true;
-      waitCount = Math.round(ms / (2.4 * 12));
     }
 
-    if(waitCount > 256) { throw new Error('milliseconds out of range: ' + ms); }
+    const waitCount = Math.trunc(ms / (assumedWlong ? LONG_STEP_MS : STEP_MS));
+    if((waitCount <= 0) || (waitCount > 256)) { throw new Error('invlaid wait count: ' + waitCount); }
     return [Converter.toWTimingCount(waitCount), assumedWlong];
   }
 
@@ -158,8 +135,8 @@ class Converter {
     return 256 - count;
   }
 
-
-  static toThreshold(low, high) {
+  static toThreshold(threshold) {
+    const { low, high } = threshold;
     return [
       low & 0xFF, low >> 8 & 0xFF,
       high & 0xFF, high >> 8 & 0xFF
@@ -174,8 +151,8 @@ class Converter {
     return wlong ? Masks.CONFIG_WLONG : 0;
   }
 
-  static toControl(multiplier) {
-    return NameValueUtil.toValue(multiplier, Enumerations.GAIN_ENUM_MAP);
+  static toControl(gain) {
+    return NameValueUtil.toValue(gain, Enumerations.GAIN_ENUM_MAP);
   }
 
   // ---------------------------------------------------------------------------

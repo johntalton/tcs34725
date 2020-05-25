@@ -140,6 +140,28 @@ const Enumerations = {
   GAIN_ENUM_MAP
 };
 
+const DEFAULT_CHIP_PROFILE = {
+  powerOn: false,
+  active: false,
+  wait: false,
+  interrupts: false,
+
+  integrationTimeMs: 2.4,
+  waitTimeMs: 2.4,
+  // waitTime: { waitCount: 1, waitLong: false },
+
+  // threshold: { low: 0, high: 0 },
+  low: 0, high: 0,
+
+  filtering: true, // true is Every
+
+  // no config (wlong is part of waitTime)
+  // todo provide direct waitCount and waitLong access
+
+  gain: 1
+};
+
+
 module.exports = {
   TCS34725_I2C_ADDRESS,
   TCS34725_I2C_PART_NUMBER,
@@ -148,5 +170,7 @@ module.exports = {
   COMMAND_CLEAR, COMMAND_BULK_DATA, COMMAND_BULK_PROFILE, COMMAND_BULK_THRESHOLD,
   Registers,
   Enumerations,
-  Masks
+  Masks,
+
+  DEFAULT_CHIP_PROFILE
 };

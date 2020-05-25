@@ -17,10 +17,10 @@
       "retryIntervalS": 13,
 
       "poll": {
-        "pollIntervalS": 10,
+        "pollIntervalS": 120,
         "flash": true,
         "status": true,
-        "profile": true,
+        "profile": false,
         "skipData": false,
         "_cycleMultiplyer": [1, 16],
         "_autoRange": false,
@@ -48,13 +48,13 @@
         "interrupts": true,
         "filtering": 1,
 
-        "high": 200,
+        "high": 20,
         "low": 0,
 
         "wait": true,
-        "waitTimeS": 7,
+        "waitTimeMs": 1000,
 
-        "multiplier": 60
+        "gain": 16
       },
 
       "led": {  "gpio": 16, "disabled": true },
