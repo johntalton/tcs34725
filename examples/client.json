@@ -17,7 +17,7 @@
       "retryIntervalS": 13,
 
       "poll": {
-        "pollIntervalS": 1,
+        "pollIntervalS": 120,
         "flash": true,
         "status": true,
         "profile": false,

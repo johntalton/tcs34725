@@ -17,7 +17,7 @@
   "author": "johntalton@gmail.com",
   "devDependencies": {
     "color-convert": "^2.0.1",
-    "eslint": "^7.0.0",
+    "eslint": "^7.1.0",
     "eslint-plugin-fp": "^2.3.0",
     "eslint-plugin-immutable": "^1.0.0",
     "eslint-plugin-import": "^2.20.2",
