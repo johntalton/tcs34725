@@ -1,5 +1,3 @@
-# tcs34725
-
 [![npm Version](http://img.shields.io/npm/v/@johntalton/tcs34725.svg)](https://www.npmjs.com/package/@johntalton/tcs34725)
 ![GitHub package.json version](https://img.shields.io/github/package-json/v/johntalton/tcs34725)
 ![CI](https://github.com/johntalton/tcs34725/workflows/CI/badge.svg?branch=master&event=push)
@@ -7,8 +5,11 @@
 [![Downloads Per Month](http://img.shields.io/npm/dm/@johntalton/tcs34725.svg)](https://www.npmjs.com/package/@johntalton/tcs34725)
 ![GitHub last commit](https://img.shields.io/github/last-commit/johntalton/tcs34725)
 
+# tcs34725
+
 TAOS Color-light sensor.
-Supporting full set of device features.
+
+This sensor provides and RGB plus intensit result.  It can be accessed via the normal read process or via interrupts based on intensity thresholds.  A wide range of setting and features are exposed by this library.
 
 [Adafruit ofcourse](https://www.adafruit.com/product/1334)
 
@@ -50,30 +51,38 @@ If ```thresholdViolation``` is true, then the chips clear channel has excided th
 
 
 ##### ```threshold```
+
+Retrives the current set thresholds for interrupts.
+
 ##### ```setThreshold```
+
+Sets new threshold values to be used for interrupt triggering.
+
 ##### ```setProfile```
+
+Set a new profile for the chip.
+
 ##### ```clearInterrupt```
+
+Manually clears the interrupt flag on the chip.  Note that if conditions for the interrupt continue to exists, the chip will imidiatly re-assert the interrupt flag.
+
 ##### ```data```
 
-
-
-## REPL
-
-Exmple repl used to interact with sensor and show basic usage. Can be used along side client to help configure and debug sensor.
-
-## Client
-
-Example client that can be configured to stream to Mqtt server.  Optimizes sensor interaction based on application state (aka, no need to poll if mqtt connection is down, fully iterrupt driven if desired etc).
-
-Also support interrupt stepping.  This allows the client to only publish step ranges based on interrupt to eliminate the need to do active polling (with ability to mix modes for custom configurations).
-
-By using a mixture of polling / stepping / interruts and filtering one can achive a vast array of chip interaction models. But also works quite well without Gpio access.
+Retrives rag data from the chip and performes RGBC convertions.
 
 
 # Interrupt
 
-Requiers gpio pin (via onoff currently) to driver interrupt (polled software interrupt also possible if pin not availble).
+Interrupts are driven via a seperate Gpio driver ([onoff](../fivdi/onoff) is well tested).  Though any mechanisme of detection is supported.
+
+Once an interrupt has been raised, clear it via normal read methods. Note that it will continue to be rased if the alert condition persists.
+
+Thresholds can be updated via the `setThreshold` call.
+
+Interrupt state can also be manually cleared via `clearInterrupt`.
 
 # LED
 
-Adafruit LED (breakout) supported also via gpio control.  Poll can be setup to automaticly flash the LED during each manual poll.
+Adafruit LED (breakout) supported also via gpio control.  The [onoff](../fivdi/onoff) library can be used to control this features.
+
+No specific code is needed via this library to support this external feature.
