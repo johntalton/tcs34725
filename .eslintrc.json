@@ -6,15 +6,17 @@
     "plugin:import/errors",
     "plugin:import/warnings",
     "plugin:security/recommended",
-    "plugin:jsdoc/recommended"
+    "plugin:jsdoc/recommended",
+    "plugin:node/recommended"
   ],
   "parserOptions": {
-    "ecmaVersion": 9,
+    "ecmaVersion": 2020,
     "sourceType": "module"
   },
   "env": {
     "es6": true,
-    "node": true
+    "node": true,
+    "mocha": true
   },
   "plugins": [
     "import",
@@ -25,7 +27,8 @@
     "fp",
     "no-use-extend-native",
     "jsdoc",
-    "spellcheck"
+    "spellcheck",
+    "mocha"
   ],
   "rules": {
     "no-console": "off",
@@ -34,7 +37,6 @@
     "no-extra-parens": "error",
     "no-prototype-builtins": "error",
     "no-template-curly-in-string": "error",
-    "valid-jsdoc": "warn",
 
     "array-callback-return": "error",
     "block-scoped-var": "error",
@@ -120,20 +122,31 @@
 
 
 
-    "callback-return": "error",
-    "global-require": "error",
-    "handle-callback-err": "error",
-    "no-buffer-constructor": "error",
-    "no-mixed-requires": "error",
-    "no-new-require": "error",
-    "no-path-concat": "error",
-    "no-process-env": "error",
-    "no-process-exit": "error",
-    "no-restricted-modules": "error",
-    "no-sync": "warn",
+    "node/handle-callback-err": "error",
+    "node/no-callback-literal": "error",
 
+    "node/no-new-require": "error",
+    "node/no-path-concat": "error",
+    "node/no-process-exit": "error",
 
-
+    "node/callback-return": "error",
+    "node/exports-style": "error",
+    "node/file-extension-in": "error",
+    "node/global-require": "error",
+    "node/no-mixed-requires": "error",
+    "node/no-process-env": "error",
+    "node/no-restricted-import": "error",
+    "node/no-restricted-require": "error",
+    "node/no-sync": "error",
+    "node/prefer-global/buffer": "error",
+    "node/prefer-global/console": "error",
+    "node/prefer-global/process": "error",
+    "node/prefer-global/text-decoder": "error",
+    "node/prefer-global/text-encoder": "error",
+    "node/prefer-global/urll-search-params": "error",
+    "node/prefer-global/url": "error",
+    "node/prefer-promises/dns": "error",
+    "node/prefer-promises/fs": "error",
 
     "no-confusing-arrow": "error",
     "no-duplicate-imports": "error",
@@ -277,14 +290,14 @@
 
 
 
-    
+
 
 
 
     "accessor-pairs": "error",
     "arrow-spacing": ["error", { "before": true, "after": true }],
-  
-   
+
+
     "comma-spacing": "error",
     "comma-style": "error",
     "computed-property-spacing": "error",
@@ -324,7 +337,7 @@
     "no-empty-character-class": "error",
     "no-ex-assign": "error",
     "no-extra-boolean-cast": "error",
-    
+
     "no-extra-semi": "error",
     "no-fallthrough": "error",
     "no-func-assign": "error",
@@ -401,7 +414,7 @@
       "block": { "balanced": true },
       "exceptions": ["-"]
     }],
-    
+
     "unicode-bom": "error",
     "use-isnan": "error",
     "valid-typeof": "error",
@@ -421,4 +434,3 @@
 
   }
 }
-
