@@ -28,7 +28,7 @@
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-security": "^1.4.0",
-    "eslint-plugin-spellcheck": "0.0.17",
+    "eslint-plugin-spellcheck": "0.0.19",
     "i2c-bus": "^5.2.0",
     "mqtt": "^4.1.0",
     "onoff": "^6.0.0",
