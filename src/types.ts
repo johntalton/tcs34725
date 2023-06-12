@@ -39,6 +39,16 @@ export type Enable = {
 	interrupts: boolean
 }
 
+export type RGBC = {
+	r: number,
+	g: number,
+	b: number,
+	c?: number,
+
+	zero?: boolean
+}
+
+
 export type RGBCRatio = RGBC
 
 export type LuxAndTemperature = {
@@ -79,13 +89,4 @@ export type FriendlyProfile = CommonProfile & {
 	threshold: Threshold
 	filtering: boolean,
 	gain: number
-}
-
-export type RGBC = {
-	r: number,
-	g: number,
-	b: number,
-	c?: number,
-
-	zero?: boolean
 }

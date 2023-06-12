@@ -3,18 +3,117 @@
   "version": "2.0.0",
   "description": "",
   "license": "MIT",
+  "engines": {
+    "node": ">=9.0.0"
+  },
   "main": "./lib/index.js",
   "type": "module",
   "exports": {
     ".": "./lib/index.js"
   },
   "scripts": {
-    "lint": "./node_modules/.bin/eslint .",
+    "lint": "npm --silent run lint:ts",
+    "lint:ts": "./node_modules/.bin/eslint --quiet  --ext .ts src/*.ts",
+    "Xlint": "./node_modules/.bin/eslint .",
     "build": "tsc",
-    "build:watch": "tsc --watch"
+    "build:watch": "tsc --watch",
+    "coverage": "npm --silent run coverage:c8",
+    "coverage:c8": "c8 --check-coverage --all --lines 75 --functions 5 --branches 85 npm --silent run test:mocha -- --no-parallel --reporter min"
+  },
+  "eslintConfig": {
+    "extends": [
+      "eslint:recommended",
+      "plugin:promise/recommended",
+      "plugin:import/recommended",
+      "plugin:import/errors",
+      "plugin:import/warnings",
+      "plugin:security/recommended",
+      "plugin:node/recommended",
+      "@johntalton/eslint-config/ts"
+    ],
+    "plugins": [
+      "import",
+      "promise",
+      "immutable",
+      "security",
+      "no-loops",
+      "fp",
+      "no-use-extend-native",
+      "spellcheck",
+      "mocha"
+    ],
+    "parserOptions": {
+      "ecmaVersion": 2020,
+      "sourceType": "module"
+    },
+    "env": {
+      "es6": true,
+      "node": false,
+      "mocha": false
+    },
+    "rules": {
+      "node/no-missing-import": "off",
+
+
+      "no-tabs": "off",
+      "indent": [
+        "error",
+        "tab"
+      ],
+      "keyword-spacing": [
+        "error",
+        {
+          "overrides": {
+            "if": {
+              "after": true
+            },
+            "for": {
+              "after": true
+            },
+            "while": {
+              "after": true
+            },
+            "switch": {
+              "after": true
+            }
+          }
+        }
+      ],
+      "valid-jsdoc": "off",
+      "max-len": [
+        "warn",
+        {
+          "code": 120
+        }
+      ],
+      "fp/no-throw": "off",
+      "fp/no-nil": "off",
+      "fp/no-class": "off",
+      "fp/no-unused-expression": "off",
+      "immutable/no-mutation": "off",
+      "fp/no-mutation": "off",
+      "fp/no-this": "off",
+      "immutable/no-this": "off",
+      "import/no-nodejs-modules": "off",
+      "spellcheck/spell-checker": [
+        "warn",
+        {
+          "ignoreRequire": true,
+          "identifiers": false,
+          "minLength": 3,
+          "skipWords": [
+            "johntalton",
+            "tcs34725", "defs"
+          ]
+        }
+      ]
+    }
   },
   "dependencies": {
     "@johntalton/and-other-delights": "^6.0.0",
+    "@johntalton/eslint-config": "^2.0.0",
+    "@typescript-eslint/eslint-plugin": "^5.59.9",
+    "eslint-plugin-mocha": "^10.1.0",
     "typescript": "^5.1.3"
   },
   "repository": {
@@ -23,22 +122,22 @@
   },
   "author": "johntalton@gmail.com",
   "devDependencies": {
+    "c8": "^7.3.0",
     "color-convert": "^2.0.1",
-    "eslint": "^7.1.0",
+    "eslint": "^8.42.0",
+    "eslint-import-resolver-typescript": "^3.5.5",
     "eslint-plugin-fp": "^2.3.0",
+    "eslint-plugin-functional": "^5.0.8",
     "eslint-plugin-immutable": "^1.0.0",
-    "eslint-plugin-import": "^2.20.2",
-    "eslint-plugin-jsdoc": "^30.0.3",
-    "eslint-plugin-mocha": "^8.0.0",
+    "eslint-plugin-import": "^2.22.0",
     "eslint-plugin-no-loops": "^0.3.0",
     "eslint-plugin-no-use-extend-native": "^0.5.0",
     "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-promise": "^6.1.1",
     "eslint-plugin-security": "^1.4.0",
-    "eslint-plugin-spellcheck": "0.0.17",
+    "eslint-plugin-spellcheck": "0.0.20",
     "i2c-bus": "^5.2.0",
     "mqtt": "^4.1.0",
-    "onoff": "^6.0.0",
-    "repler": "github:johntalton/repler"
+    "onoff": "^6.0.0"
   }
 }

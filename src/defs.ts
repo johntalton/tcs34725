@@ -1,4 +1,4 @@
-import { Profile } from "./types.js"
+import { Profile } from './types.js'
 
 export const TCS34725_I2C_ADDRESS = 0x29
 export const TCS34725_I2C_PART_NUMBER = 0x44 // TCS34721 and TCS34725

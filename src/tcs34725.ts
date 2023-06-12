@@ -10,11 +10,11 @@ import {
 export class TCS34725 {
 	#bus: I2CAddressedBus
 
-	static from(bus: I2CAddressedBus, _options: {}) {
+	static from(bus: I2CAddressedBus, _options: Map<unknown, unknown>) {
 		return new TCS34725(bus, _options)
 	}
 
-	constructor(bus: I2CAddressedBus, _options: {}) { this.#bus = bus }
+	constructor(bus: I2CAddressedBus, _options: Map<unknown, unknown>) { this.#bus = bus }
 
 	get name() { return this.#bus.name }
 

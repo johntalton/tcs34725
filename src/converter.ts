@@ -57,7 +57,7 @@ export class Converter {
 			new Int8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength) :
 			new Int8Array(buffer)
 
-		const value = buffer8[0]
+		const [ value ] = buffer8
 
 		return {
 			powerOn: (value & Masks.ENABLE_PON) === Masks.ENABLE_PON,
@@ -72,7 +72,7 @@ export class Converter {
 			new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength) :
 			new Uint8Array(buffer)
 
-		const wtime = bufferU8[0]
+		const [ wtime ] = bufferU8
 		const count = 256 - wtime
 
 		return {
@@ -86,7 +86,7 @@ export class Converter {
 			new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength) :
 			new Uint8Array(buffer)
 
-		const _atime = bufferU8[0]
+		const [ _atime ] = bufferU8
 
 		const integrationCycles = 256 - _atime
 		const integrationMaxCount = integrationCycles * 1024
@@ -127,7 +127,7 @@ export class Converter {
 			new Int8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength) :
 			new Int8Array(buffer)
 
-		const value = buffer8[0]
+		const [ value ] = buffer8
 		return { wlong: (value & Masks.CONFIG_WLONG) === Masks.CONFIG_WLONG }
 	}
 
@@ -136,7 +136,7 @@ export class Converter {
 			new Int8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength) :
 			new Int8Array(buffer)
 
-		const value = buffer8[0]
+		const [ value ] = buffer8
 		const aint = (value & Masks.STATUS_AINT) === Masks.STATUS_AINT
 		const avalid = (value & Masks.STATUS_AVALID) === Masks.STATUS_AVALID
 		return {
@@ -150,7 +150,7 @@ export class Converter {
 			new Int8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength) :
 			new Int8Array(buffer)
 
-		const value = buffer8[0]
+		const [ value ] = buffer8
 		const again = value & Masks.CONTROL_AGAIN
 		return { again: again }
 	}
@@ -185,11 +185,7 @@ export class Converter {
 		// continue using the higher resolution timing calculation
 		// until it is no-longer in range.  Then switch to the 12x.
 		// todo this choice can be used for fingerprinting
-		let assumedWlong = false
-		if (ms > RANGE.high) {
-			// console.log('out of one x range, twellve x')
-			assumedWlong = true
-		}
+		const assumedWlong = ms > RANGE.high
 
 		const waitCount = Math.trunc(ms / (assumedWlong ? LONG_STEP_MS : STEP_MS))
 		if ((waitCount <= 0) || (waitCount > 256)) { throw new Error('invlaid wait count: ' + waitCount) }
@@ -252,7 +248,7 @@ export class Converter {
 			r: raw.r / 0xFFFF,
 			g: raw.g / 0xFFFF,
 			b: raw.b / 0xFFFF,
-			c: (raw.c !== undefined) ? raw.c / 0XFFFF : 0
+			c: raw.c !== undefined ? raw.c / 0XFFFF : 0
 		}
 	}
 

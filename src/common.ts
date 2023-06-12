@@ -18,24 +18,8 @@ import {
 	makeCommand,
 	COMMAND_BULK_DATA,
 	COMMAND_BULK_PROFILE,
-	COMMAND_BULK_THRESHOLD,
+	COMMAND_BULK_THRESHOLD
 } from './defs.js'
-
-// export class CommonInt {
-
-	// static async _rawProfile(bus: I2CAddressedBus): Promise<ProfileParts> {
-	// 	return Promise.all([
-	// 		CommonInt.getEnabled(bus),
-	// 		CommonInt.getIntegrationTiming(bus),
-	// 		CommonInt.getWaitTiming(bus),
-	// 		Common.getThreshold(bus),
-	// 		CommonInt.getPersistence(bus),
-	// 		CommonInt.getConfig(bus),
-	// 		CommonInt.getControl(bus),
-	// 		Common.getStatus(bus)
-	// 	])
-	// }
-// }
 
 export class Common {
 	static async getId(bus: I2CAddressedBus): Promise<number> {
@@ -54,7 +38,7 @@ export class Common {
 	}
 
 	static async getIntegrationTiming(bus: I2CAddressedBus): Promise<IntegrationTimingParts> {
-		const buffer = await  bus.readI2cBlock(makeCommand(Registers.ATIME), 1)
+		const buffer = await bus.readI2cBlock(makeCommand(Registers.ATIME), 1)
 		return Converter.parseIntegrationTiming(buffer)
 	}
 
@@ -179,7 +163,7 @@ export class Common {
 	// 	await Common.setEnabled(bus, enable)
 	// }
 
-	static setIntegrationTiming(_bus: I2CAddressedBus, _integrationTimeMs: number): any {
+	static setIntegrationTiming(_bus: I2CAddressedBus, _integrationTimeMs: number) {
 		throw new Error('Method not implemented.')
 	}
 
@@ -208,6 +192,6 @@ export class Common {
 
 		// const c = (buffer.readUInt8(1) << 8) | buffer.readUInt8(0)
 
-		return  Converter.formatData({ r: r, g: g, b: b, c: c })
+		return Converter.formatData({ r: r, g: g, b: b, c: c })
 	}
 }
