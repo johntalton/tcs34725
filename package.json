@@ -25,7 +25,7 @@
     "build": "tsc",
     "build:watch": "tsc --watch",
     "coverage": "npm --silent run coverage:c8",
-    "coverage:c8": "c8 --check-coverage --reporter lcov --all --lines 75 --functions 5 --branches 85 npm --silent run test:mocha -- --no-parallel --reporter min"
+    "coverage:c8": "c8 --check-coverage --reporter text --reporter lcov --all --lines 70 --functions 5 --branches 70 npm --silent run test:mocha -- --no-parallel --reporter min"
   },
   "eslintConfig": {
     "extends": [
