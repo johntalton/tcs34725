@@ -2,7 +2,7 @@ name: CI
 on: [ push, pull_request ]
 
 jobs:
-  Lint:
+  CI:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3.5.3
@@ -11,6 +11,7 @@ jobs:
       env:
         CI: true
     - run: npm run lint --if-present -- --quiet
+    - run: npm run build
     - run: npm run test --if-present -- --quiet
     - run: npm run coverage --if-present -- --quiet
 
