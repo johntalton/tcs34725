@@ -5,7 +5,7 @@
 ![GitHub](https://img.shields.io/github/license/johntalton/tcs34725)
 [![Downloads Per Month](http://img.shields.io/npm/dm/@johntalton/tcs34725.svg)](https://www.npmjs.com/package/@johntalton/tcs34725)
 ![GitHub last commit](https://img.shields.io/github/last-commit/johntalton/tcs34725)
-[![Package Quality](https://npm.packagequality.com/shield/%40johntalton%2Ftcs34725.svg)](https://packagequality.com/#?package=@johntalton/tcs34725)
+
 
 # TCS 34725
 
