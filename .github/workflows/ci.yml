@@ -11,4 +11,6 @@ jobs:
       env:
         CI: true
     - run: npm run lint --if-present -- --quiet
+    - run: npm run test --if-present -- --quiet
+    - run: npm run coverage --if-present -- --quiet
 

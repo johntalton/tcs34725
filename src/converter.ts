@@ -238,8 +238,7 @@ export class Converter {
 			raw: data,
 			ratio: Converter.calculateRatio(data),
 			rgb: Converter.calculateRGB(data),
-			lux: lt.lux,
-			temperatureK: lt.temperatureK
+			...lt
 		}
 	}
 
