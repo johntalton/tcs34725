@@ -4,8 +4,10 @@ import { Common } from './common.js'
 import {
 	Configuration,
 	Enable,
+	FriendlyProfile,
 	Threshold
 } from './types.js'
+import { DEFAULT_CHIP_PROFILE } from './defs.js'
 
 export class TCS34725 {
 	#bus: I2CAddressedBus
@@ -36,8 +38,8 @@ export class TCS34725 {
 	async setConfig(config: Configuration) { return Common.setConfig(this.#bus, config) }
 	async setThreshold(threshold: Threshold) { return Common.setThreshold(this.#bus, threshold) }
 
-	// async setProfile(profile: FriendlyProfile) {
-	// 	const profileExploded = { ...DEFAULT_CHIP_PROFILE, ...profile }
-	// 	return Common.setProfile(this.#bus, profileExploded)
-	// }
+	async setProfile(profile: FriendlyProfile) {
+		const profileExploded = { ...DEFAULT_CHIP_PROFILE, ...profile }
+		return Common.setProfile(this.#bus, profileExploded)
+	}
 }
