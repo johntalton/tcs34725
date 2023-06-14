@@ -1,13 +1,13 @@
 [![npm Version](http://img.shields.io/npm/v/@johntalton/tcs34725.svg)](https://www.npmjs.com/package/@johntalton/tcs34725)
 ![GitHub package.json version](https://img.shields.io/github/package-json/v/johntalton/tcs34725)
-![CI](https://github.com/johntalton/tcs34725/workflows/CI/badge.svg?branch=master&event=push)
+![CI](https://github.com/johntalton/tcs34725/workflows/CI/badge.svg?branch=main&event=push)
 ![CodeQL](https://github.com/johntalton/tcs34725/workflows/CodeQL/badge.svg)
 ![GitHub](https://img.shields.io/github/license/johntalton/tcs34725)
 [![Downloads Per Month](http://img.shields.io/npm/dm/@johntalton/tcs34725.svg)](https://www.npmjs.com/package/@johntalton/tcs34725)
 ![GitHub last commit](https://img.shields.io/github/last-commit/johntalton/tcs34725)
-[![Package Quality](https://npm.packagequality.com/shield/%40johntalton%2Ftcs34725.svg)](https://packagequality.com/#?package=@johntalton/tcs34725)
 
-# tcs34725
+
+# TCS 34725
 
 TAOS Color-light sensor.
 
@@ -24,8 +24,8 @@ Primary interface method for accessing the sensor and factory for creating class
 example usage:
 
 ```javascript
-const sensor = await Tcs34725.init(i2cbus);
-const color = await sensor.data();
+const sensor = await Tcs34725.from(abus)
+const color = await sensor.data()
 ```
 
 ##### ```static init```
@@ -37,22 +37,22 @@ Returns a instance of this class.
 
 Closes the device and bus instance.
 
-##### ```id```
+##### ```getId```
 
 Retrives the chips ID.
 
-##### ```profile```
+##### ```getProfile```
 
 Retrives full profile, including status, from the chip.
 
-##### ```status```
+##### ```getStatus```
 
 Retrives status flag, including ```thresholdViolation``` and ```valid```.
 
 If ```thresholdViolation``` is true, then the chips clear channel has excided the
 
 
-##### ```threshold```
+##### ```getThreshold```
 
 Retrives the current set thresholds for interrupts.
 
@@ -68,7 +68,7 @@ Set a new profile for the chip.
 
 Manually clears the interrupt flag on the chip.  Note that if conditions for the interrupt continue to exists, the chip will imidiatly re-assert the interrupt flag.
 
-##### ```data```
+##### ```getData```
 
 Retrives rag data from the chip and performes RGBC convertions.
 
