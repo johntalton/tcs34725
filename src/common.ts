@@ -145,24 +145,24 @@ export class Common {
 
 	static async setProfile(_bus: I2CAddressedBus, _profile: Profile): Promise<void> {
 		throw new Error('no impl')
-	// 	const enable = Converter.encodeEnable(profile) // todo do not pass entire profile
-	// 	const [wtime, wlong] = Converter.encodeWTimingMs(profile.waitTimeMs)
-	// 	const threshold = profile.threshold || { low: profile.low, high: profile.high }
-	// 	const persistence = Converter.encodePersistence(profile.filtering)
-	// 	const config = Converter.encodeConfiguration({ wlong })
-	// 	const control = Converter.encodeControl(profile.gain)
+		// 	const enable = Converter.encodeEnable(profile) // todo do not pass entire profile
+		// 	const [wtime, wlong] = Converter.encodeWTimingMs(profile.waitTimeMs)
+		// 	const threshold = profile.threshold || { low: profile.low, high: profile.high }
+		// 	const persistence = Converter.encodePersistence(profile.filtering)
+		// 	const config = Converter.encodeConfiguration({ wlong })
+		// 	const control = Converter.encodeControl(profile.gain)
 
-	// 	// sets all independently, though, all may not run in order
-	// 	await Promise.all([
-	// 		Common.setIntegrationTiming(bus, profile.integrationTimeMs),
-	// 		Common.setWaitTiming(bus, wtime),
-	// 		Common.setThreshold(bus, threshold),
-	// 		Common.setPersistence(bus, persistence),
-	// 		Common.setConfig(bus, config),
-	// 		Common.setControl(bus, control)
-	// 	])
+		// 	// sets all independently, though, all may not run in order
+		// 	await Promise.all([
+		// 		Common.setIntegrationTiming(bus, profile.integrationTimeMs),
+		// 		Common.setWaitTiming(bus, wtime),
+		// 		Common.setThreshold(bus, threshold),
+		// 		Common.setPersistence(bus, persistence),
+		// 		Common.setConfig(bus, config),
+		// 		Common.setControl(bus, control)
+		// 	])
 
-	// 	await Common.setEnabled(bus, enable)
+		// 	await Common.setEnabled(bus, enable)
 	}
 
 	static setIntegrationTiming(_bus: I2CAddressedBus, _integrationTimeMs: number) {
