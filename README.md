@@ -1,6 +1,6 @@
 [![npm Version](http://img.shields.io/npm/v/@johntalton/tcs34725.svg)](https://www.npmjs.com/package/@johntalton/tcs34725)
 ![GitHub package.json version](https://img.shields.io/github/package-json/v/johntalton/tcs34725)
-![CI](https://github.com/johntalton/tcs34725/workflows/CI/badge.svg?branch=main&event=push)
+[![CI](https://github.com/johntalton/tcs34725/actions/workflows/ci.yml/badge.svg)](https://github.com/johntalton/tcs34725/actions/workflows/ci.yml)
 ![CodeQL](https://github.com/johntalton/tcs34725/workflows/CodeQL/badge.svg)
 ![GitHub](https://img.shields.io/github/license/johntalton/tcs34725)
 [![Downloads Per Month](http://img.shields.io/npm/dm/@johntalton/tcs34725.svg)](https://www.npmjs.com/package/@johntalton/tcs34725)
