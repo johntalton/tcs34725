@@ -10,7 +10,8 @@ import {
 	Status,
 	Configuration,
 	Data,
-	FriendlyProfile
+	FriendlyProfile,
+	Profile
 } from './types.js'
 import { Converter } from './converter.js'
 import {
@@ -142,7 +143,8 @@ export class Common {
 		])
 	}
 
-	// static async setProfile(bus: I2CAddressedBus, profile: Profile): Promise<void> {
+	static async setProfile(_bus: I2CAddressedBus, _profile: Profile): Promise<void> {
+		throw new Error('no impl')
 	// 	const enable = Converter.encodeEnable(profile) // todo do not pass entire profile
 	// 	const [wtime, wlong] = Converter.encodeWTimingMs(profile.waitTimeMs)
 	// 	const threshold = profile.threshold || { low: profile.low, high: profile.high }
@@ -161,7 +163,7 @@ export class Common {
 	// 	])
 
 	// 	await Common.setEnabled(bus, enable)
-	// }
+	}
 
 	static setIntegrationTiming(_bus: I2CAddressedBus, _integrationTimeMs: number) {
 		throw new Error('Method not implemented.')

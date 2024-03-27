@@ -1,6 +1,6 @@
 {
   "name": "@johntalton/tcs34725",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "",
   "license": "MIT",
   "engines": {
@@ -130,9 +130,9 @@
   },
   "dependencies": {
     "@johntalton/and-other-delights": "^6.0.0",
-    "@johntalton/eslint-config": "^2.0.0",
-    "@typescript-eslint/eslint-plugin": "^6.6.0",
-    "chai": "^4.3.7",
+    "@johntalton/eslint-config": "^3.0.0",
+    "@typescript-eslint/eslint-plugin": "^7.4.0",
+    "chai": "^5.1.0",
     "eslint-plugin-mocha": "^10.1.0",
     "mocha": "^10.2.0",
     "typescript": "^5.1.3"
@@ -143,7 +143,7 @@
   },
   "author": "johntalton@gmail.com",
   "devDependencies": {
-    "c8": "^8.0.1",
+    "c8": "^9.1.0",
     "color-convert": "^2.0.1",
     "eslint": "^8.42.0",
     "eslint-import-resolver-typescript": "^3.5.5",
@@ -155,10 +155,10 @@
     "eslint-plugin-no-use-extend-native": "^0.5.0",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^6.1.1",
-    "eslint-plugin-security": "^1.4.0",
+    "eslint-plugin-security": "^2.1.1",
     "eslint-plugin-spellcheck": "0.0.20",
     "i2c-bus": "^5.2.0",
-    "mqtt": "^4.1.0",
+    "mqtt": "^5.5.0",
     "onoff": "^6.0.0"
   }
 }
