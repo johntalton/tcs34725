@@ -127,7 +127,7 @@
     "global": []
   },
   "dependencies": {
-    "@johntalton/and-other-delights": "^6.0.0",
+    "@johntalton/and-other-delights": "^7.0.0",
     "@johntalton/eslint-config": "^3.0.0",
     "@typescript-eslint/eslint-plugin": "^7.4.0",
     "chai": "^5.1.0",
