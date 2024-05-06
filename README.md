@@ -1,19 +1,17 @@
 [![npm Version](http://img.shields.io/npm/v/@johntalton/tcs34725.svg)](https://www.npmjs.com/package/@johntalton/tcs34725)
 ![GitHub package.json version](https://img.shields.io/github/package-json/v/johntalton/tcs34725)
 ![CI](https://github.com/johntalton/tcs34725/workflows/CI/badge.svg?branch=main&event=push)
-![CodeQL](https://github.com/johntalton/tcs34725/workflows/CodeQL/badge.svg)
 ![GitHub](https://img.shields.io/github/license/johntalton/tcs34725)
 [![Downloads Per Month](http://img.shields.io/npm/dm/@johntalton/tcs34725.svg)](https://www.npmjs.com/package/@johntalton/tcs34725)
 ![GitHub last commit](https://img.shields.io/github/last-commit/johntalton/tcs34725)
-
 
 # TCS 34725
 
 TAOS Color-light sensor.
 
-This sensor provides and RGB plus intensit result.  It can be accessed via the normal read process or via interrupts based on intensity thresholds.  A wide range of setting and features are exposed by this library.
+This sensor provides and RGB plus intensity result.  It can be accessed via the normal read process or via interrupts based on intensity thresholds.  A wide range of setting and features are exposed by this library.
 
-[Adafruit ofcourse](https://www.adafruit.com/product/1334)
+[Adafruit of course](https://www.adafruit.com/product/1334)
 
 ## API
 

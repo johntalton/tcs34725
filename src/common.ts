@@ -1,25 +1,27 @@
 import { I2CAddressedBus } from '@johntalton/and-other-delights'
 
 import {
-	Threshold,
-	Enable,
-	IntegrationTimingParts,
-	WaitTiming,
-	Persistence,
-	Control,
-	Status,
 	Configuration,
+	Control,
 	Data,
+	Enable,
 	FriendlyProfile,
-	Profile
+	IntegrationTimingParts,
+	Persistence,
+	Profile,
+	Status,
+	Threshold,
+	WaitTiming
 } from './types.js'
+
 import { Converter } from './converter.js'
+
 import {
-	Registers,
-	makeCommand,
 	COMMAND_BULK_DATA,
 	COMMAND_BULK_PROFILE,
-	COMMAND_BULK_THRESHOLD
+	COMMAND_BULK_THRESHOLD,
+	Registers,
+	makeCommand
 } from './defs.js'
 
 export class Common {
