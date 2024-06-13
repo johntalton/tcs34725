@@ -142,7 +142,7 @@
     "eslint-plugin-mocha": "^10.1.0",
     "mocha": "^10.2.0",
     "typescript": "^5.4.5",
-    "c8": "^9.1.0",
+    "c8": "^10.1.2",
     "eslint": "^8.42.0",
     "eslint-import-resolver-typescript": "^3.5.5",
     "eslint-plugin-fp": "^2.3.0",
