@@ -128,7 +128,7 @@
     "global": []
   },
   "dependencies": {
-    "@johntalton/and-other-delights": "^7.0.0"
+    "@johntalton/and-other-delights": "^8.6.4"
   },
   "repository": {
     "type": "git",
